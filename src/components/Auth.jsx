@@ -10,7 +10,7 @@ export default function Auth({ user, onGuestMode }) {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: window.location.origin
+          redirectTo: 'https://jpark0926-ux.github.io/spell-study/'
         }
       })
       if (error) throw error
