@@ -402,6 +402,7 @@ const css=`
 @keyframes hpP{0%,100%{box-shadow:0 0 5px rgba(255,0,0,0.3)}50%{box-shadow:0 0 15px rgba(255,0,0,0.6)}}
 @keyframes gg{0%,100%{text-shadow:0 0 10px rgba(255,215,0,0.5)}50%{text-shadow:0 0 20px rgba(255,215,0,0.8),0 0 40px rgba(255,215,0,0.4)}}
 @keyframes rl{0%{transform:rotateY(90deg)}100%{transform:rotateY(0)}}
+@keyframes flipF{0%{transform:rotateY(0)}50%{transform:rotateY(90deg)}100%{transform:rotateY(0)}}
 @keyframes va{0%{transform:scale(0) rotate(-20deg);opacity:0}60%{transform:scale(1.15) rotate(5deg)}100%{transform:scale(1) rotate(0);opacity:1}}
 @keyframes dp{0%,100%{box-shadow:0 0 20px rgba(100,0,0,0.15) inset}50%{box-shadow:0 0 60px rgba(100,0,0,0.3) inset}}
 @keyframes fi{from{opacity:0}to{opacity:1}}
@@ -431,6 +432,12 @@ export default function App(){
   const[tbMode,setTbMode]=useState(false);
   const[playerName,setPlayerName]=useState("");
   const[nameInput,setNameInput]=useState("");
+  const[studyQ,setStudyQ]=useState([]);
+  const[studyIdx,setStudyIdx]=useState(0);
+  const[studyFlipped,setStudyFlipped]=useState(false);
+  const[studyUnknown,setStudyUnknown]=useState([]);
+  const[studyRound,setStudyRound]=useState(1);
+  const[studyUnitN,setStudyUnitN]=useState(null);
   const[questions,setQuestions]=useState([]);
   const[qi,setQi]=useState(0);
   const[coins,setCoins]=useState(0);
@@ -916,14 +923,127 @@ export default function App(){
             <div style={{color:"rgba(255,255,255,0.2)",fontSize:8}}>25 rounds · 5 bosses</div></div>
           </div>)
         :tbChapters.map(c=>
-          <div key={c.n} onClick={()=>startGame(c.n)} style={{background:"rgba(255,255,255,0.03)",border:"1px solid rgba(66,153,225,0.2)",borderRadius:14,padding:"18px",marginBottom:8,cursor:"pointer",transition:"all 0.3s",display:"flex",alignItems:"center",gap:10}}
+          <div key={c.n} style={{background:"rgba(255,255,255,0.03)",border:"1px solid rgba(66,153,225,0.2)",borderRadius:14,padding:"14px 18px",marginBottom:8,transition:"all 0.3s"}}
             onMouseEnter={e=>{e.currentTarget.style.borderColor="#63B3ED";}} onMouseLeave={e=>{e.currentTarget.style.borderColor="rgba(66,153,225,0.2)";}}>
-            <div style={{fontSize:26,width:42,height:42,background:"rgba(66,153,225,0.08)",borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center"}}>{c.i}</div>
-            <div style={{textAlign:"left"}}><div style={{color:"#63B3ED",fontSize:13,fontWeight:700}}>Chapter {c.n}: {c.t}</div>
-            <div style={{color:"rgba(255,255,255,0.2)",fontSize:8}}>{c.words.length} words</div></div>
+            <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
+              <div style={{fontSize:26,width:42,height:42,background:"rgba(66,153,225,0.08)",borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center"}}>{c.i}</div>
+              <div style={{textAlign:"left"}}><div style={{color:"#63B3ED",fontSize:13,fontWeight:700}}>Chapter {c.n}: {c.t}</div>
+              <div style={{color:"rgba(255,255,255,0.2)",fontSize:8}}>{c.words.length} words</div></div>
+            </div>
+            <div style={{display:"flex",gap:6}}>
+              <button onClick={()=>{setStudyQ([...c.words]);setStudyIdx(0);setStudyFlipped(false);setStudyUnknown([]);setStudyRound(1);setStudyUnitN(c.n);setScreen("study");}}
+                style={{flex:1,padding:"8px",borderRadius:10,border:"1px solid rgba(66,153,225,0.3)",background:"rgba(66,153,225,0.08)",color:"#63B3ED",fontSize:11,fontWeight:700,cursor:"pointer"}}>📖 단어 공부</button>
+              <button onClick={()=>startGame(c.n)}
+                style={{flex:1,padding:"8px",borderRadius:10,border:"none",background:"linear-gradient(135deg,#63B3ED,#3182CE)",color:"#fff",fontSize:11,fontWeight:700,cursor:"pointer"}}>⚡ 퀴즈 시작</button>
+            </div>
           </div>)}
       </div>
     </div></>);
+
+  // STUDY FLASHCARD
+  if(screen==="study"){
+    const word = studyQ[studyIdx];
+    const total = studyQ.length;
+    const progress = ((studyIdx)/total)*100;
+    const sentDisplay = word ? word.sent.replace("_____",studyFlipped?`[${word.en}]`:"_____") : "";
+    
+    const markWord=(known)=>{
+      if(!known) setStudyUnknown(p=>[...p,word]);
+      const next = studyIdx+1;
+      if(next >= total){
+        // round done
+        if(!known && studyUnknown.length===0){
+          // only 1 unknown (current)
+          setTimeout(()=>{setStudyQ([word]);setStudyIdx(0);setStudyFlipped(false);setStudyUnknown([]);setStudyRound(2);},300);
+        } else if(studyUnknown.length>0||((!known))){
+          const unknowns = known ? studyUnknown : [...studyUnknown, word];
+          if(unknowns.length>0){
+            setTimeout(()=>{setStudyQ(unknowns);setStudyIdx(0);setStudyFlipped(false);setStudyUnknown([]);setStudyRound(p=>p+1);},300);
+          } else {
+            setTimeout(()=>{setStudyIdx(next);},300);
+          }
+        } else {
+          setTimeout(()=>{setStudyIdx(next);},300);
+        }
+      } else {
+        setStudyFlipped(false);
+        setTimeout(()=>setStudyIdx(next),150);
+      }
+    };
+
+    const allDone = studyIdx >= total;
+
+    return(<><style>{css}</style>
+      <div style={{minHeight:"100vh",background:BG,fontFamily:"'Cinzel',serif",display:"flex",flexDirection:"column",alignItems:"center",padding:"20px 14px",position:"relative",overflow:"hidden"}}>
+        <Bg/>
+        <div style={{width:"100%",maxWidth:420,position:"relative",zIndex:1}}>
+          {/* Header */}
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16}}>
+            <button onClick={()=>setScreen("unitSelect")} style={{background:"none",border:"none",color:"rgba(212,166,48,0.5)",fontSize:12,cursor:"pointer",padding:"4px 8px"}}>← 뒤로</button>
+            <div style={{color:"#D4A630",fontSize:11,fontWeight:600}}>Round {studyRound} · {studyIdx}/{total}</div>
+            <button onClick={()=>startGame(studyUnitN)} style={{background:"linear-gradient(135deg,#D4A630,#B8860B)",border:"none",borderRadius:8,color:"#1a1033",fontSize:10,fontWeight:700,cursor:"pointer",padding:"5px 10px"}}>⚡ 퀴즈</button>
+          </div>
+
+          {/* Progress bar */}
+          <div style={{height:4,background:"rgba(255,255,255,0.05)",borderRadius:2,marginBottom:20,overflow:"hidden"}}>
+            <div style={{height:"100%",width:`${progress}%`,background:"linear-gradient(90deg,#D4A630,#63B3ED)",borderRadius:2,transition:"width 0.3s"}}/>
+          </div>
+
+          {allDone ? (
+            /* Complete screen */
+            <div style={{textAlign:"center",paddingTop:40}}>
+              <div style={{fontSize:60,marginBottom:12}}>🎉</div>
+              <h2 style={{color:"#D4A630",fontSize:18,fontWeight:700,marginBottom:8}}>단어 공부 완료!</h2>
+              <p style={{color:"rgba(255,255,255,0.4)",fontSize:12,marginBottom:30}}>이제 퀴즈에 도전해봐!</p>
+              <button onClick={()=>startGame(studyUnitN)} style={{width:"100%",padding:"16px",borderRadius:14,border:"none",background:"linear-gradient(135deg,#D4A630,#B8860B)",color:"#1a1033",fontSize:15,fontWeight:800,cursor:"pointer",fontFamily:"'Cinzel',serif"}}>⚡ 퀴즈 시작!</button>
+              <button onClick={()=>setScreen("unitSelect")} style={{width:"100%",marginTop:10,padding:"12px",borderRadius:14,border:"1px solid rgba(212,166,48,0.2)",background:"transparent",color:"rgba(212,166,48,0.6)",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"'Cinzel',serif"}}>🏰 홈으로</button>
+            </div>
+          ) : (
+            /* Flashcard */
+            <div>
+              <div onClick={()=>!studyFlipped&&setStudyFlipped(true)}
+                style={{minHeight:280,background:"linear-gradient(145deg,rgba(45,27,78,0.95),rgba(26,15,48,0.98))",border:`2px solid ${studyFlipped?"#63B3ED":"rgba(212,166,48,0.3)"}`,borderRadius:20,padding:"28px 24px",cursor:studyFlipped?"default":"pointer",transition:"border-color 0.3s",boxShadow:`0 8px 32px rgba(0,0,0,0.4)`,textAlign:"center",display:"flex",flexDirection:"column",justifyContent:"center",gap:14}}>
+                
+                {/* English word */}
+                <div style={{fontSize:32,fontWeight:800,color:"#D4A630",letterSpacing:1}}>{word?.en}</div>
+                
+                {/* Example sentence with blank */}
+                <div style={{fontSize:13,color:"rgba(255,255,255,0.5)",fontStyle:"italic",lineHeight:1.6,fontFamily:"Georgia,serif"}}>
+                  {sentDisplay}
+                </div>
+
+                {!studyFlipped && (
+                  <div style={{color:"rgba(212,166,48,0.3)",fontSize:11,marginTop:8}}>👆 탭해서 정답 확인</div>
+                )}
+
+                {studyFlipped && (
+                  <div style={{borderTop:"1px solid rgba(99,179,237,0.2)",paddingTop:14,animation:"fi 0.3s ease"}}>
+                    <div style={{fontSize:22,fontWeight:700,color:"#63B3ED",marginBottom:6}}>{word?.ko}</div>
+                    <div style={{fontSize:11,color:"rgba(255,255,255,0.4)",lineHeight:1.5,fontFamily:"Georgia,serif"}}>{word?.def}</div>
+                  </div>
+                )}
+              </div>
+
+              {/* Know/Don't know buttons */}
+              {studyFlipped && (
+                <div style={{display:"flex",gap:10,marginTop:14,animation:"fi 0.2s ease"}}>
+                  <button onClick={()=>markWord(false)} style={{flex:1,padding:"14px",borderRadius:14,border:"2px solid rgba(239,68,68,0.4)",background:"rgba(239,68,68,0.08)",color:"#EF4444",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"'Cinzel',serif"}}>✗ 몰랐어</button>
+                  <button onClick={()=>markWord(true)} style={{flex:1,padding:"14px",borderRadius:14,border:"2px solid rgba(52,211,153,0.4)",background:"rgba(52,211,153,0.08)",color:"#34D399",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"'Cinzel',serif"}}>✓ 알았어</button>
+                </div>
+              )}
+
+              {/* Unknown words count */}
+              {studyUnknown.length>0 && (
+                <div style={{textAlign:"center",marginTop:10,color:"rgba(239,68,68,0.5)",fontSize:10}}>
+                  재학습 예정: {studyUnknown.length}개
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </>);
+  }
 
   // GAME
   if(screen==="game"){
