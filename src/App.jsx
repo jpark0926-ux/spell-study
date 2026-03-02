@@ -75,6 +75,28 @@ const u4W=[
 
 // ── 교과서 단어 ──
 const tbChapters=[
+  {n:1,t:"Sea & Navigation",i:"⚓",words:[
+    {en:"aboard",ko:"배에 탄",def:"on or in a boat or airplane",sent:"Wear a life jacket _____ the ship."},
+    {en:"admiral",ko:"제독",def:"an officer with a high rank in the navy",sent:"As the _____, Mike is the senior sailor on his ship."},
+    {en:"binoculars",ko:"쌍안경",def:"an instrument for seeing things that are far away",sent:"Erin always takes _____ when she goes bird watching."},
+    {en:"darken",ko:"어두워지다",def:"to become dark or darker",sent:"The sky _____, although it was still early."},
+    {en:"grip",ko:"꽉 잡다",def:"to take firmly and hold tightly",sent:"They _____ the holds on the climbing wall."},
+    {en:"knot",ko:"매듭",def:"a join made by tying together the ends of a string",sent:"I tied three strings in a _____."},
+    {en:"minimum",ko:"최소한",def:"the smallest possible amount or degree",sent:"The _____ wage is the least amount a boss can legally pay."},
+    {en:"navigate",ko:"항해하다",def:"to direct a vehicle, ship, or aircraft",sent:"I use my phone to _____ in a new area."},
+    {en:"precaution",ko:"예방책",def:"an action taken to prevent a possible problem",sent:"Timmy wears a helmet and pads as a _____."},
+    {en:"slippery",ko:"미끄러운",def:"smooth, wet, or oily and difficult to walk on",sent:"The sign warns drivers that the road is _____."},
+    {en:"anchor",ko:"닻",def:"a heavy object that prevents a vessel from moving",sent:"The _____ is raised while the boat is moving."},
+    {en:"ashore",ko:"해안으로",def:"to the land; to the shore",sent:"Sea turtles come _____ to lay eggs."},
+    {en:"drift",ko:"표류하다",def:"to slowly move on water, without control of direction",sent:"I lost my shoe when it _____ out to sea."},
+    {en:"immigrate",ko:"이민 오다",def:"to come to a different country and live there",sent:"You need a special visa in your passport to _____."},
+    {en:"manual",ko:"손으로 하는",def:"of or related to using the hands",sent:"Francis enjoys _____ work like repairing broken things."},
+    {en:"mist",ko:"안개",def:"a large number of tiny drops of water in the air",sent:"It is hard to navigate a boat through _____."},
+    {en:"nationality",ko:"국적",def:"the status of belonging to a particular nation",sent:"People of all _____s visit this area."},
+    {en:"rust",ko:"녹",def:"a reddish-brown powder that forms on iron",sent:"There is a big patch of _____ on my car."},
+    {en:"salmon",ko:"연어",def:"a medium-sized fish with pink flesh",sent:"I ate grilled _____ for lunch."},
+    {en:"wreck",ko:"망가뜨리다",def:"to destroy or badly damage",sent:"The speeding driver _____ed his car."},
+  ]},
   {n:5,t:"Nature & Farming",i:"🌾",words:[
     {en:"abundant",ko:"풍부한",def:"existing or available in large quantities",sent:"Fruit is _____ in summer."},
     {en:"consistent",ko:"일관된",def:"always behaving or happening in a similar way",sent:"Her results are _____ every time."},
