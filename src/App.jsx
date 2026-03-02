@@ -1,35 +1,850 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import * as Tone from "tone";
 
-function App() {
-  const [count, setCount] = useState(0)
+const u2W=[
+  {en:"dose",ko:"복용량",def:"an amount of medicine to take at a certain time",sent:"The doctor told her to take one _____ of the medicine after each meal."},
+  {en:"famine",ko:"기근",def:"a period in which people do not have food",sent:"The severe _____ left many people without food for months."},
+  {en:"gratitude",ko:"감사",def:"a feeling of being thankful",sent:"She sent a card to express her _____ for the gift."},
+  {en:"injection",ko:"주사",def:"the act of putting a liquid in your body via a needle",sent:"Many vaccines are given as an _____."},
+  {en:"literate",ko:"읽고 쓸 줄 아는",def:"able to read and write",sent:"Schools help children become _____ by teaching them to read and write."},
+  {en:"prescription",ko:"처방전",def:"written instructions from a doctor for medication",sent:"The doctor gave me a _____ for some antibiotics."},
+  {en:"sociology",ko:"사회학",def:"the study of society",sent:"In _____ class, we study how society works."},
+  {en:"tendency",ko:"경향",def:"a habit or action that keeps occurring",sent:"He has a _____ to oversleep on weekends."},
+  {en:"vein",ko:"정맥",def:"a tube in the body through which blood travels to the heart",sent:"The nurse found a _____ in his arm to draw blood."},
+  {en:"vulnerable",ko:"취약한",def:"weak and easily hurt",sent:"Young children are more _____ to disease."},
+  {en:"foster",ko:"촉진하다",def:"to care for in order to encourage growth",sent:"Good teachers _____ a love of learning in their students."},
+  {en:"immunity",ko:"면역력",def:"the ability to resist disease",sent:"Vaccines help your body build _____ against diseases."},
+  {en:"intestine",ko:"장(腸)",def:"the tubes through which food passes after it leaves the stomach",sent:"Food is digested in the _____ after leaving the stomach."},
+  {en:"malaria",ko:"말라리아",def:"a disease carried by mosquitoes",sent:"Mosquitoes can spread _____ through their bites."},
+  {en:"neglected",ko:"방치된",def:"suffering from a lack of care",sent:"The _____ garden was full of weeds and dead plants."},
+  {en:"parasite",ko:"기생충",def:"a small animal or plant that lives off another",sent:"A _____ lives off another organism and can cause harm."},
+  {en:"surgeon",ko:"외과 의사",def:"a kind of doctor who performs operations",sent:"The _____ performed a five-hour operation on the patient."},
+  {en:"tolerate",ko:"참다",def:"to accept a situation, even if you don't like it",sent:"I cannot _____ the noise from the construction site."},
+  {en:"undergo",ko:"겪다",def:"to experience something unpleasant",sent:"She had to _____ several tests before the surgery."},
+  {en:"welfare",ko:"복지",def:"the state of well-being",sent:"The government is concerned about the _____ of its citizens."},
+];
+const u3W=[
+  {en:"antibiotic",ko:"항생제",def:"a drug used to kill bacteria",sent:"The doctor prescribed an _____ to treat the infection."},
+  {en:"belly",ko:"배",def:"the stomach",sent:"The baby was sleeping on her _____."},
+  {en:"bruise",ko:"멍",def:"an injury that causes the skin to become dark",sent:"He had a large _____ on his arm after falling down."},
+  {en:"cellular",ko:"세포의",def:"relating to cells",sent:"Scientists study diseases on a _____ level using microscopes."},
+  {en:"decay",ko:"썩다",def:"to slowly break down; to rot",sent:"If you leave fruit out too long, it will start to _____."},
+  {en:"dental",ko:"치과의",def:"relating to the teeth",sent:"Good _____ care is important for keeping your teeth healthy."},
+  {en:"fatal",ko:"치명적인",def:"causing death",sent:"A bite from this snake can be _____."},
+  {en:"graze",ko:"긁히다",def:"to scratch and break the skin",sent:"She fell and _____d her knee on the pavement."},
+  {en:"limb",ko:"팔다리",def:"an arm or leg",sent:"He injured his left _____ during the soccer game."},
+  {en:"lump",ko:"덩어리",def:"a solid mass",sent:"There was a strange _____ on his hand that needed to be checked."},
+  {en:"artery",ko:"동맥",def:"a tube that carries blood away from the heart",sent:"An _____ carries blood away from the heart to the body."},
+  {en:"blink",ko:"깜빡이다",def:"to shut and open the eyes very quickly",sent:"In a staring contest, the first person to _____ loses."},
+  {en:"blush",ko:"얼굴이 붉어지다",def:"to become red in the face",sent:"She started to _____ when everyone looked at her."},
+  {en:"breast",ko:"가슴",def:"the upper part of a person's chest",sent:"His suit jacket had a pocket over the _____."},
+  {en:"consult",ko:"상담하다",def:"to seek an opinion from someone",sent:"You should _____ a doctor before taking any new medicine."},
+  {en:"diagnose",ko:"진단하다",def:"to identify a disease or problem",sent:"It can be difficult to _____ rare diseases."},
+  {en:"fluid",ko:"액체",def:"a liquid",sent:"When you are sick, make sure to drink plenty of _____s."},
+  {en:"grief",ko:"슬픔",def:"great sadness, usually due to a loss",sent:"She felt deep _____ after losing her grandmother."},
+  {en:"limp",ko:"절뚝거리다",def:"to walk with difficulty or in an uneven way",sent:"After hurting his ankle, he began to _____ down the hallway."},
+  {en:"outcome",ko:"결과",def:"a result",sent:"The _____ of the experiment was surprising."},
+];
 
-  return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+const u4W=[
+  {en:"abstract",ko:"추상적인",def:"based on ideas rather than real things",sent:"_____ things like love are hard to explain."},
+  {en:"canvas",ko:"캔버스",def:"a piece of material on which a painting can be done",sent:"What shall I paint on this _____?"},
+  {en:"contemporary",ko:"현대의",def:"modern",sent:"The house has a _____ design."},
+  {en:"depict",ko:"묘사하다",def:"to show or represent",sent:"I wonder what this art is meant to _____."},
+  {en:"fabulous",ko:"멋진",def:"wonderful",sent:"The park looks _____ tonight."},
+  {en:"genuine",ko:"진짜의",def:"real; not false",sent:"I bought a _____ designer bag."},
+  {en:"hardship",ko:"고난",def:"a difficult circumstance",sent:"The man is suffering from financial _____."},
+  {en:"medieval",ko:"중세의",def:"relating to the European Middle Ages",sent:"Paul is dressed as a _____ soldier."},
+  {en:"portray",ko:"연기하다",def:"to play the part of, as in a play or film",sent:"Joy is _____ing a clown in her latest play."},
+  {en:"skull",ko:"두개골",def:"the bones of the head",sent:"The archeologist uncovered a _____ in the ground."},
+  {en:"accessory",ko:"액세서리",def:"something decorative worn to complete an outfit",sent:"A scarf and some jewelry are perfect _____ies."},
+  {en:"carnival",ko:"카니발",def:"a public festival",sent:"The streets were full of people during the _____."},
+  {en:"commission",ko:"의뢰하다",def:"to give an order and pay money for a thing to be done",sent:"The Taj Mahal was _____ed by an emperor."},
+  {en:"enthusiastic",ko:"열정적인",def:"happy and excited",sent:"They are _____ about volunteering."},
+  {en:"multicultural",ko:"다문화의",def:"including many different cultures",sent:"Large cities often have a _____ population."},
+  {en:"outfit",ko:"의상",def:"a set of clothes",sent:"Pam's _____ is perfect for exercising in the winter."},
+  {en:"pedestrian",ko:"보행자",def:"a person who is walking, not riding in a vehicle",sent:"_____s should walk on the crosswalk to cross the street."},
+  {en:"pony",ko:"조랑말",def:"a type of small horse",sent:"The _____ has a saddle and harness."},
+  {en:"sparkle",ko:"반짝이다",def:"to shine; to reflect light",sent:"The sunlight _____s on the water."},
+  {en:"veil",ko:"베일",def:"a thin covering for the head and face",sent:"The bride wore a _____."},
+];
+
+const houses=[
+  {id:"gryffindor",name:"Gryffindor",nameKo:"그리핀도르",color:"#AE0001",c2:"#D4A630",bg:"linear-gradient(135deg,#740001,#AE0001)",emoji:"🦁",trait:"용기",pat:"🦌"},
+  {id:"slytherin",name:"Slytherin",nameKo:"슬리데린",color:"#1A472A",c2:"#AAAAAA",bg:"linear-gradient(135deg,#0D2818,#1A472A)",emoji:"🐍",trait:"야망",pat:"🐉"},
+  {id:"ravenclaw",name:"Ravenclaw",nameKo:"래번클로",color:"#0E1A40",c2:"#946B2D",bg:"linear-gradient(135deg,#0A1128,#222F5B)",emoji:"🦅",trait:"지혜",pat:"🦅"},
+  {id:"hufflepuff",name:"Hufflepuff",nameKo:"후플푸프",color:"#ECB939",c2:"#372E29",bg:"linear-gradient(135deg,#C4972A,#ECB939)",emoji:"🦡",trait:"성실",pat:"🦡"},
+];
+
+const wands=[
+  {id:"holly",name:"Holly & Phoenix Feather",nameKo:"호랑가시나무 & 불사조 깃털",emoji:"🪄",power:"spell",desc:"주문 위력 +20%",color:"#FF6B6B"},
+  {id:"vine",name:"Vine & Dragon Heartstring",nameKo:"포도나무 & 용 심장줄",emoji:"⚡",power:"time",desc:"타이머 +3초",color:"#FFD700"},
+  {id:"elder",name:"Elder & Thestral Tail",nameKo:"딱총나무 & 세스트랄 꼬리",emoji:"💀",power:"crit",desc:"크리티컬 확률 UP",color:"#C084FC"},
+  {id:"willow",name:"Willow & Unicorn Hair",nameKo:"버드나무 & 유니콘 털",emoji:"✨",power:"heal",desc:"자동 회복 +1",color:"#34D399"},
+];
+
+const locations=[
+  {name:"Platform 9¾",nameKo:"9와 3/4 승강장",emoji:"🚂",bg:"#4A2C0A"},
+  {name:"Great Hall",nameKo:"대연회장",emoji:"🏰",bg:"#2A1B4E"},
+  {name:"Potions Class",nameKo:"마법약 교실",emoji:"🧪",bg:"#1A2A1A"},
+  {name:"Library",nameKo:"도서관",emoji:"📚",bg:"#2A1B0E"},
+  {name:"Dark Forest",nameKo:"금지된 숲",emoji:"🌲",bg:"#0A1A0A"},
+  {name:"Chamber of Secrets",nameKo:"비밀의 방",emoji:"🐍",bg:"#0A0A2A"},
+];
+
+const villains=[
+  {id:"malfoy",name:"Malfoy",nameKo:"말포이",av:"👱‍♂️",hp:3,intro:"또 만났군! 이번엔 내가 이긴다!",hit:["으악!","이번만이다!"],defeat:"아버지한테 이를 거다!",right:["흥!","운이지!"],wrong:["바보!","그것도 모르냐?"]},
+  {id:"umbridge",name:"Umbridge",nameKo:"엄브릿지",av:"👩‍🏫",hp:4,intro:"에헴... 시작합시다!",hit:["규칙 위반!","이런!"],defeat:"교육부에 보고하겠어요!",right:["인정하기 싫지만...","흥!"],wrong:["벌칙이에요!","방과후 남으세요!"]},
+  {id:"bellatrix",name:"Bellatrix",nameKo:"벨라트릭스",av:"🧙‍♀️",hp:5,intro:"키히히! 놀아줄까?",hit:["감히!","아프잖아!"],defeat:"이럴 수가... 주인님!",right:["운일 뿐!","재미있는 애..."],wrong:["벌칙이에요!","크루시오!"]},
+  {id:"snape",name:"Snape",nameKo:"스네이프",av:"🧑‍🔬",hp:5,intro:"...오늘의 시험을 시작하지.",hit:["인상적이군.","예상 밖이야."],defeat:"...합격이다. 겨우.",right:["당연한 거다.","운이지."],wrong:["구제불능이군.","교과서를 펴 봤나?"]},
+  {id:"voldemort",name:"Voldemort",nameKo:"볼드모트",av:"🐍",hp:7,intro:"감히 나에게 도전하다니!",hit:["불가능해!","감히...!"],defeat:"안 돼에에!!!",right:["이 힘은 어디서...!","이번만이다."],wrong:["나를 이길 수 없다!","굴복해라!"]},
+];
+
+const allies=[
+  {id:"dumbledore",k:"덤블도어",av:"🧙‍♂️",msg:["훌륭하구나!","10점 수여!","단어의 마법을 느끼고 있구나!"],bad:"포기하지 마렴."},
+  {id:"hermione",k:"헤르미온느",av:"👩‍🎓",msg:["나보다 빠른걸?","공부가 답이야!","완벽해!"],bad:"다음엔 맞출 수 있어!",hint:"내 노트를 보여줄게! 📖"},
+  {id:"ron",k:"론",av:"👦🏻",msg:["천재 아니야?!","미쳤다!!","대박!"],bad:"괜찮아 나도 맨날 틀려ㅋㅋ"},
+  {id:"hagrid",k:"해그리드",av:"🧔",msg:["대견하구먼!","네가 자랑스럽구나!"],bad:"걱정 마!"},
+  {id:"dobby",k:"도비",av:"🧝",msg:["도비는 자랑스럽습니다!","위대한 마법사!"],bad:"도비가 위로해 드리겠습니다..."},
+  {id:"luna",k:"루나",av:"👱‍♀️",msg:["나글이 도와줬어!","멋지다..."],bad:"럼프킨이 방해한 거야."},
+  {id:"neville",k:"네빌",av:"🧑‍🌾",msg:["나도 저렇게 되고 싶다!","진짜 대단하다!"],bad:"나도 항상 실수해!"},
+  {id:"mcgonagall",k:"맥고나걸",av:"🐱",msg:["훌륭합니다!","기숙사에 영광이에요!"],bad:"더 노력하세요."},
+  {id:"sirius",k:"시리우스",av:"🐕",msg:["제임스 같구나!","대단해!"],bad:"포기하지 마!"},
+  {id:"fred",k:"프레드 & 조지",av:"👬",msg:["우리보다 낫잖아!","장난이 아니라 실력이네!"],bad:"웃으면 나아져! 개구리 젤리?"},
+];
+
+const potions=[
+  {id:"felix",nameKo:"펠릭스 펠리시스 🍯",desc:"다음 1문제 자동 정답",cost:40,color:"#FFD700"},
+  {id:"pepperup",nameKo:"원기회복제 ❤️",desc:"HP +3 회복",cost:25,color:"#34D399"},
+  {id:"wit",nameKo:"재치강화제 💡",desc:"힌트 +2",cost:20,color:"#60A5FA"},
+  {id:"time",nameKo:"시간의 모래시계 ⏳",desc:"3문제 타이머 30초",cost:35,color:"#C084FC"},
+  {id:"shield",nameKo:"방어의 물약 🛡️",desc:"다음 1회 피격 무시",cost:30,color:"#F59E0B"},
+];
+
+const beans=[
+  {emoji:"🟤",name:"초콜릿 맛",effect:"heal",desc:"+1 HP!",good:true},
+  {emoji:"🟢",name:"풀 맛",effect:"none",desc:"맛없다...",good:false},
+  {emoji:"🟡",name:"레몬 맛",effect:"coins",desc:"+15 Gold!",good:true},
+  {emoji:"🔴",name:"고추 맛",effect:"speed",desc:"타이머 -3초!",good:false},
+  {emoji:"⚫",name:"흙 맛",effect:"none",desc:"으웩!",good:false},
+  {emoji:"🟠",name:"귤 맛",effect:"hint",desc:"+1 힌트!",good:true},
+  {emoji:"⚪",name:"바닐라 맛",effect:"streak",desc:"콤보 +1!",good:true},
+  {emoji:"🟣",name:"구토 맛",effect:"lose_hp",desc:"-1 HP!",good:false},
+  {emoji:"🌟",name:"황금 맛!",effect:"mega",desc:"+30 Gold +2 HP!",good:true},
+];
+
+const frogCards=[
+  {id:"merlin",name:"Merlin",emoji:"🧙",r:"L"},{id:"dumbledore_c",name:"Dumbledore",emoji:"🧙‍♂️",r:"L"},
+  {id:"mcg",name:"McGonagall",emoji:"🐱",r:"R"},{id:"flamel",name:"Flamel",emoji:"💎",r:"L"},
+  {id:"newt",name:"Newt",emoji:"🧳",r:"R"},{id:"circe",name:"Circe",emoji:"🏺",r:"E"},
+  {id:"agrippa",name:"Agrippa",emoji:"📕",r:"E"},{id:"morgana",name:"Morgana",emoji:"🌙",r:"R"},
+];
+
+const achievements=[
+  {id:"first_blood",name:"첫 승리",desc:"첫 문제 정답",emoji:"⚡",check:h=>h.length>=1&&h[0]&&h[0].correct},
+  {id:"combo5",name:"마법의 연쇄",desc:"5콤보 달성",emoji:"🔥",check:(_h,s)=>s.bestStreak>=5},
+  {id:"combo10",name:"전설의 콤보",desc:"10콤보 달성",emoji:"💎",check:(_h,s)=>s.bestStreak>=10},
+  {id:"perfect",name:"완벽한 마법사",desc:"전부 정답",emoji:"👑",check:h=>h.length>0&&h.every(x=>x.correct)},
+  {id:"speed",name:"번개 시전",desc:"3초 안에 정답",emoji:"⚡",check:(_h,s)=>s.fastAnswer},
+  {id:"survivor",name:"불사조",desc:"HP 1에서 생존",emoji:"🔥",check:(_h,s)=>s.survived1hp},
+  {id:"boss5",name:"어둠의 정복자",desc:"보스 5명 처치",emoji:"🗡️",check:(_h,s)=>s.bossKills>=5},
+  {id:"collector",name:"수집가",desc:"카드 5장 이상",emoji:"🃏",check:(_h,s)=>s.cards>=5},
+  {id:"snitch3",name:"탐색자",desc:"스니치 3회 잡기",emoji:"🏆",check:(_h,s)=>s.snitches>=3},
+  {id:"noHint",name:"순수 실력",desc:"힌트 없이 클리어",emoji:"🌟",check:(_h,s)=>s.noHint},
+];
+
+const _s={started:false};
+const playS=async t=>{try{
+  if(!_s.started){await Tone.start();_s.started=true;}
+  const s=new Tone.Synth({oscillator:{type:"sine"},envelope:{attack:0.01,decay:0.2,sustain:0.1,release:0.4},volume:-15}).toDestination();
+  const r=new Tone.Reverb({decay:1.2,wet:0.25}).toDestination();
+  const m=new Tone.Synth({oscillator:{type:"triangle"},envelope:{attack:0.01,decay:0.15,sustain:0.05,release:0.3},volume:-17}).connect(r);
+  const gap=t==="cup"?150:t==="patronus"?60:t==="intro"?150:80;
+  const P=(ns,d)=>ns.forEach((n,i)=>setTimeout(()=>m.triggerAttackRelease(n,d),i*gap));
+  if(t==="spell")P(["E5","G5","B5","E6"],"16n");
+  else if(t==="hit"){s.triggerAttackRelease("E3","16n");setTimeout(()=>s.triggerAttackRelease("C3","16n"),80);}
+  else if(t==="defeat")P(["E3","G3","B3","E4","G4","B4","E5"],"8n");
+  else if(t==="select")m.triggerAttackRelease("E5","32n");
+  else if(t==="patronus")P(["C4","E4","G4","C5","E5","G5","B5","C6"],"16n");
+  else if(t==="intro")P(["E4","B4","E5","G5","B5"],"8n");
+  else if(t==="sort")P(["C4","E4","G4","C5"],"4n");
+  else if(t==="dark"){s.triggerAttackRelease("C2","4n");setTimeout(()=>s.triggerAttackRelease("Eb2","4n"),200);}
+  else if(t==="snitch")P(["G5","A5","B5","D6","G6"],"32n");
+  else if(t==="potion")P(["E4","G4","B4","E5"],"16n");
+  else if(t==="frog"){m.triggerAttackRelease("C5","8n");setTimeout(()=>m.triggerAttackRelease("G5","8n"),150);setTimeout(()=>m.triggerAttackRelease("E6","4n"),300);}
+  else if(t==="peeves"){s.triggerAttackRelease("F#4","16n");setTimeout(()=>s.triggerAttackRelease("A4","16n"),60);}
+  else if(t==="cup")P(["C4","E4","G4","C5","E5","G5","C6"],"4n");
+  else if(t==="bean")m.triggerAttackRelease("D5","8n");
+  else if(t==="howler"){["C3","C3","E3","G3"].forEach((n,i)=>setTimeout(()=>s.triggerAttackRelease(n,"8n"),i*80));}
+  else if(t==="wand")P(["A4","C5","E5","A5"],"8n");
+  else if(t==="ach")P(["C5","E5","G5","C6"],"16n");
+  else if(t==="hint"){m.triggerAttackRelease("A4","16n");setTimeout(()=>m.triggerAttackRelease("E4","16n"),100);}
+  else if(t==="tick")s.triggerAttackRelease("B5","64n");
+  else if(t==="heal")P(["C5","E5","G5","C6","E6"],"16n");
+  else if(t==="ally")P(["G4","B4","D5","G5"],"8n");
+  setTimeout(()=>{s.dispose();m.dispose();r.dispose();},3000);
+}catch(e){}};
+
+const shuffle=a=>{const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;};
+const norm=s=>s.trim().toLowerCase().replace(/[^a-z]/g,"");
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+
+function genQs(words){
+  const qs=[],p=shuffle(words);
+  p.slice(0,8).forEach(w=>{const wr=shuffle(words.filter(x=>x.en!==w.en)).slice(0,3).map(x=>x.ko);qs.push({type:"mc_ko",word:w,options:shuffle([w.ko,...wr]),answer:w.ko});});
+  shuffle(p).slice(0,8).forEach(w=>qs.push({type:"type_en",word:w,answer:w.en}));
+  shuffle(p).slice(0,5).forEach(w=>{const wr=shuffle(words.filter(x=>x.en!==w.en)).slice(0,3).map(x=>x.en);qs.push({type:"sentence",word:w,options:shuffle([w.en,...wr]),answer:w.en,sentence:w.sent});});
+  shuffle(p).slice(0,4).forEach(w=>{const wr=shuffle(words.filter(x=>x.en!==w.en)).slice(0,3).map(x=>x.en);qs.push({type:"mc_en",word:w,options:shuffle([w.en,...wr]),answer:w.en});});
+  return shuffle(qs);
 }
 
-export default App
+function Bg({color="rgba(255,215,0,0.25)"}){
+  const s=useMemo(()=>Array.from({length:18},(_,i)=>({id:i,x:Math.random()*100,y:Math.random()*100,sz:1+Math.random()*3,dur:3+Math.random()*6,del:Math.random()*-8})),[]);
+  return <div style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:0}}>{s.map(p=><div key={p.id} style={{position:"absolute",left:`${p.x}%`,top:`${p.y}%`,width:p.sz,height:p.sz,borderRadius:"50%",background:color,opacity:0.25,boxShadow:`0 0 ${p.sz*3}px ${color}`,animation:`tw ${p.dur}s ease-in-out ${p.del}s infinite`}}/>)}</div>;
+}
+
+function Bub({av,name,text,side="left",color="#D4A630"}){
+  if(!text) return null;
+  const l=side==="left";
+  return(<div style={{display:"flex",gap:7,alignItems:"flex-start",flexDirection:l?"row":"row-reverse",animation:"su 0.25s ease",marginBottom:8}}>
+    <div style={{width:36,height:36,borderRadius:"50%",background:"rgba(255,255,255,0.04)",border:`1.5px solid ${color}33`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0,animation:"fl 3s ease-in-out infinite"}}>{av}</div>
+    <div style={{maxWidth:"72%"}}>
+      <div style={{fontSize:8,color,fontWeight:700,marginBottom:1,textAlign:l?"left":"right",fontFamily:"'Cinzel',serif"}}>{name}</div>
+      <div style={{background:"rgba(255,255,255,0.04)",border:`1px solid ${color}22`,borderRadius:l?"2px 11px 11px 11px":"11px 2px 11px 11px",padding:"8px 11px",color:"rgba(255,255,255,0.75)",fontSize:11,fontFamily:"'Crimson Text',serif",lineHeight:1.4,fontStyle:"italic"}}>{text}</div>
+    </div>
+  </div>);
+}
+
+function OvLay({children,bg="rgba(0,0,0,0.85)"}){
+  return <div style={{position:"fixed",inset:0,background:bg,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",zIndex:100,animation:"fi 0.2s ease"}}>{children}</div>;
+}
+
+const BG="radial-gradient(ellipse at top,#1a1033 0%,#0a0612 50%,#050208 100%)";
+
+const css=`
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;800;900&family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&family=MedievalSharp&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;}
+@keyframes tw{0%,100%{opacity:0.1;transform:scale(0.8)}50%{opacity:0.7;transform:scale(1.2)}}
+@keyframes fl{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@keyframes su{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+@keyframes pi{0%{transform:scale(0)}50%{transform:scale(1.15)}100%{transform:scale(1)}}
+@keyframes sk{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+@keyframes sg{0%{transform:scale(0);opacity:1}100%{transform:scale(3);opacity:0}}
+@keyframes cdd{0%{transform:scale(1);opacity:1}50%{transform:scale(1.3);opacity:0.5}100%{transform:scale(0) rotate(180deg);opacity:0}}
+@keyframes sh{0%{transform:rotate(-5deg) scale(1)}25%{transform:rotate(5deg) scale(1.05)}50%{transform:rotate(-3deg) scale(1.1)}75%{transform:rotate(3deg) scale(1.05)}100%{transform:rotate(0) scale(1)}}
+@keyframes cp{0%{transform:scale(3);opacity:0}30%{transform:scale(1);opacity:1}80%{opacity:1}100%{transform:scale(0.5);opacity:0}}
+@keyframes bf{from{width:0}}
+@keyframes hpP{0%,100%{box-shadow:0 0 5px rgba(255,0,0,0.3)}50%{box-shadow:0 0 15px rgba(255,0,0,0.6)}}
+@keyframes gg{0%,100%{text-shadow:0 0 10px rgba(255,215,0,0.5)}50%{text-shadow:0 0 20px rgba(255,215,0,0.8),0 0 40px rgba(255,215,0,0.4)}}
+@keyframes rl{0%{transform:rotateY(90deg)}100%{transform:rotateY(0)}}
+@keyframes va{0%{transform:scale(0) rotate(-20deg);opacity:0}60%{transform:scale(1.15) rotate(5deg)}100%{transform:scale(1) rotate(0);opacity:1}}
+@keyframes dp{0%,100%{box-shadow:0 0 20px rgba(100,0,0,0.15) inset}50%{box-shadow:0 0 60px rgba(100,0,0,0.3) inset}}
+@keyframes fi{from{opacity:0}to{opacity:1}}
+@keyframes sm{0%{transform:translate(0,0) rotate(0)}25%{transform:translate(8px,-12px) rotate(8deg)}50%{transform:translate(-5px,5px) rotate(-5deg)}75%{transform:translate(6px,-6px) rotate(6deg)}100%{transform:translate(0,0) rotate(0)}}
+@keyframes sgl{0%,100%{filter:drop-shadow(0 0 8px gold)}50%{filter:drop-shadow(0 0 20px gold) brightness(1.3)}}
+@keyframes cr{0%{transform:rotateY(180deg) scale(0.5);opacity:0}50%{transform:rotateY(90deg) scale(0.8)}100%{transform:rotateY(0) scale(1);opacity:1}}
+@keyframes pf{0%{transform:translateX(-20px) rotate(-8deg)}50%{transform:translateX(20px) rotate(8deg)}100%{transform:translateX(-20px) rotate(-8deg)}}
+@keyframes pa{0%{opacity:0;transform:scale(0.3);filter:brightness(3)}40%{opacity:0.8;transform:scale(1.1)}60%{opacity:0.6;transform:scale(1)}100%{opacity:0;transform:scale(1.5)}}
+@keyframes inkS{0%{opacity:0.95}100%{opacity:0}}
+@keyframes cspin{0%{transform:rotateY(0)}100%{transform:rotateY(360deg)}}
+@keyframes hw{0%,100%{transform:rotate(-2deg)}50%{transform:rotate(2deg)}}
+@keyframes wb{0%{transform:scale(0.5) rotate(10deg);opacity:0}50%{transform:scale(1.1) rotate(-5deg)}100%{transform:scale(1) rotate(0);opacity:1}}
+@keyframes bB{0%{transform:translateY(0)}50%{transform:translateY(-20px)}100%{transform:translateY(0)}}
+@keyframes trn{0%{transform:translateX(-100%)}100%{transform:translateX(100vw)}}
+@keyframes achP{0%{transform:scale(0) rotate(-10deg)}50%{transform:scale(1.2) rotate(5deg)}100%{transform:scale(1) rotate(0)}}
+input:focus{outline:none;border-color:#D4A630 !important;box-shadow:0 0 0 3px rgba(212,166,48,0.2);}
+`;
+
+export default function App(){
+  const[screen,setScreen]=useState("home");
+  const[house,setHouse]=useState(null);
+  const[wand,setWand]=useState(null);
+  const[unit,setUnit]=useState(null);
+  const[questions,setQuestions]=useState([]);
+  const[qi,setQi]=useState(0);
+  const[coins,setCoins]=useState(0);
+  const[hp,setHp]=useState(10);
+  const mxHp=10;
+  const[streak,setStreak]=useState(0);
+  const[best,setBest]=useState(0);
+  const[tmr,setTmr]=useState(20);
+  const[ans,setAns]=useState(false);
+  const[selOpt,setSelOpt]=useState(null);
+  const[typed,setTyped]=useState("");
+  const[ok,setOk]=useState(null);
+  const[hist,setHist]=useState([]);
+  const[hints,setHints]=useState(3);
+  const[hUsed,setHUsed]=useState(false);
+  const[revL,setRevL]=useState([]);
+  const[snd,setSnd]=useState(true);
+  const[showSp,setShowSp]=useState(false);
+  const[spC,setSpC]=useState("#FFD700");
+  const[curV,setCurV]=useState(null);
+  const[vHp,setVHp]=useState(0);
+  const[vShk,setVShk]=useState(false);
+  const[vMsg,setVMsg]=useState(null);
+  const[vDead,setVDead]=useState(false);
+  const[killedV,setKilledV]=useState([]);
+  const[showVI,setShowVI]=useState(false);
+  const[aMsg,setAMsg]=useState(null);
+  const[curA,setCurA]=useState(null);
+  const[pShk,setPShk]=useState(false);
+  const[shop,setShop]=useState(false);
+  const[cards,setCards]=useState([]);
+  const[showCard,setShowCard]=useState(null);
+  const[showPat,setShowPat]=useState(false);
+  const[peeves,setPeeves]=useState(null);
+  const[ink,setInk]=useState(false);
+  const[felix,setFelix]=useState(false);
+  const[timeBst,setTimeBst]=useState(0);
+  const[shield,setShield]=useState(false);
+  const[snitch,setSnitch]=useState(false);
+  const[sPos,setSPos]=useState({x:50,y:50});
+  const[sCatch,setSCatch]=useState(0);
+  const[showSB,setShowSB]=useState(false);
+  const[bean,setBean]=useState(null);
+  const[howler,setHowler]=useState(false);
+  const[wrongRow,setWrongRow]=useState(0);
+  const[cd,setCd]=useState(null);
+  const[sortA,setSortA]=useState(false);
+  const[wandA,setWandA]=useState(false);
+  const[showAch,setShowAch]=useState(null);
+  const[earnedAch,setEarnedAch]=useState([]);
+  const[fast,setFast]=useState(false);
+  const[surv1,setSurv1]=useState(false);
+  const[hintEver,setHintEver]=useState(false);
+  const[locIdx,setLocIdx]=useState(0);
+  const[showLoc,setShowLoc]=useState(false);
+  const[showCup,setShowCup]=useState(false);
+  const[timedOut,setTimedOut]=useState(false);
+  const tRef=useRef(null);
+  const iRef=useRef(null);
+  const snRef=useRef(null);
+  const shieldRef=useRef(shield);
+  shieldRef.current=shield;
+  const cQRef=useRef(null);
+  const curVRef=useRef(null);
+  const playRef=useRef(null);
+
+  const play=useCallback(t=>{if(snd)playS(t);},[snd]);
+  const cQ=questions[qi]||null;
+  const tQ=questions.length;
+  const prog=tQ>0?((qi)/tQ)*100:0;
+  const hD=house?houses.find(h=>h.id===house):null;
+  const wD=wand?wands.find(w=>w.id===wand):null;
+  const loc=locations[Math.min(locIdx,locations.length-1)];
+
+  // Handle timeout via flag (no side effects in state updaters)
+  // refs 최신값 동기화
+  cQRef.current=cQ;
+  curVRef.current=curV;
+  playRef.current=play;
+
+  useEffect(()=>{
+    if(!timedOut) return;
+    setTimedOut(false);
+    setAns(true);setOk(false);setStreak(0);setWrongRow(p=>p+1);
+    if(!shieldRef.current) setHp(p=>{const n=Math.max(0,p-1);if(n===1)setSurv1(true);return n;});
+    else setShield(false);
+    playRef.current("hit");setPShk(true);setTimeout(()=>setPShk(false),500);
+    if(curVRef.current) setVMsg(pick(curVRef.current.wrong));
+    const a=pick(allies);setCurA(a);setAMsg(a.bad);playRef.current("ally");
+    setTimeout(()=>{setAMsg(null);setCurA(null);},2500);
+    if(cQRef.current) setHist(p=>[...p,{q:cQRef.current,correct:false,answer:null,timedOut:true}]);
+  },[timedOut]);
+
+  useEffect(()=>{
+    if(screen!=="game"||cd!==null) return;
+    const vi=Math.min(Math.floor(qi/5),villains.length-1);
+    const v=villains[vi];
+    if(!curV||curV.id!==v.id){
+      setCurV(v);setVHp(v.hp);setVDead(false);
+      setShowVI(true);setVMsg(v.intro);play("dark");
+      setLocIdx(vi);setShowLoc(true);
+      setTimeout(()=>setShowLoc(false),1500);
+      setTimeout(()=>setShowVI(false),2200);
+    }
+  },[qi,screen,cd]);
+
+  // Timer: pure countdown only
+  useEffect(()=>{
+    if(screen!=="game"||ans||cd!==null||showVI||shop||snitch) return;
+    tRef.current=setInterval(()=>{
+      setTmr(prev=>{
+        if(prev<=1) return 0;
+        return prev-1;
+      });
+    },1000);
+    return()=>clearInterval(tRef.current);
+  },[screen,qi,ans,cd,showVI,shop,snitch]);
+
+  // Tick sound separate from updater
+  useEffect(()=>{if(tmr===4&&screen==="game"&&!ans) play("tick");},[tmr]);
+
+  // Detect timer=0 => trigger timeout flag
+  useEffect(()=>{if(tmr===0&&screen==="game"&&!ans&&!timedOut) setTimedOut(true);},[tmr,screen,ans,timedOut]);
+
+  useEffect(()=>{
+    if(screen==="game"&&cQ&&cQ.type==="type_en"&&!ans&&!showVI&&!shop&&!snitch)
+      setTimeout(()=>iRef.current?.focus(),100);
+  },[qi,screen,ans,showVI,shop,snitch]);
+
+  useEffect(()=>{
+    if(cd===null) return;
+    if(cd===0){setCd(null);return;}
+    const t=setTimeout(()=>setCd(cd-1),800);
+    return()=>clearTimeout(t);
+  },[cd]);
+
+  useEffect(()=>{
+    if(screen!=="game"||shop||showVI||cd!==null||ans) return;
+    if(qi>0&&qi%7===0&&!snitch){
+      const t1=setTimeout(()=>{
+        setSnitch(true);play("snitch");
+        const mv=()=>setSPos({x:15+Math.random()*70,y:20+Math.random()*50});
+        mv();snRef.current=setInterval(mv,700);
+        setTimeout(()=>{if(snRef.current)clearInterval(snRef.current);setSnitch(false);},3500);
+      },400);
+      return()=>clearTimeout(t1);
+    }
+  },[qi,screen,shop,showVI,cd]);
+
+  useEffect(()=>{
+    if(screen!=="game"||ans||shop||showVI||cd!==null||snitch) return;
+    if(qi>2&&Math.random()<0.1&&!peeves){
+      const evts=[{name:"시간을 5초 훔쳤다!",emoji:"⏰",eff:"time"},{name:"잉크를 뿌렸다!",emoji:"🖤",eff:"ink"},{name:'"공부 못하는 게 티나~!"',emoji:"😜",eff:"none"},{name:"선택지를 뒤섞었다!",emoji:"🔀",eff:"none"}];
+      const e=pick(evts);setPeeves(e);play("peeves");
+      if(e.eff==="time") setTmr(p=>Math.max(3,p-5));
+      if(e.eff==="ink"){setInk(true);setTimeout(()=>setInk(false),2500);}
+      setTimeout(()=>setPeeves(null),2200);
+    }
+  },[qi,screen]);
+
+  useEffect(()=>{
+    if(screen!=="game"||cd!==null||showVI||shop) return;
+    if(qi>0&&qi%8===0&&!bean&&!ans){
+      const b=pick(beans);setBean(b);play("bean");
+      if(b.effect==="heal") setHp(p=>Math.min(mxHp,p+1));
+      else if(b.effect==="coins") setCoins(p=>p+15);
+      else if(b.effect==="hint") setHints(p=>p+1);
+      else if(b.effect==="streak") setStreak(p=>p+1);
+      else if(b.effect==="lose_hp") setHp(p=>Math.max(1,p-1));
+      else if(b.effect==="speed") setTmr(p=>Math.max(5,p-3));
+      else if(b.effect==="mega"){setCoins(p=>p+30);setHp(p=>Math.min(mxHp,p+2));}
+      setTimeout(()=>setBean(null),2500);
+    }
+  },[qi,screen,cd,showVI,shop]);
+
+  useEffect(()=>{return()=>{if(snRef.current)clearInterval(snRef.current);if(tRef.current)clearInterval(tRef.current);};},[]);
+
+  const showAlly=(type)=>{const a=pick(allies);setCurA(a);setAMsg(type==="ok"||type==="combo"?pick(a.msg):a.bad);play("ally");setTimeout(()=>{setAMsg(null);setCurA(null);},2500);};
+  const awardCard=()=>{const av=frogCards.filter(c=>!cards.includes(c.id));if(!av.length)return;const c=pick(av);setCards(p=>[...p,c.id]);setShowCard(c);play("frog");setTimeout(()=>setShowCard(null),2800);};
+
+  const startGame=u=>{
+    if(snRef.current)clearInterval(snRef.current);if(tRef.current)clearInterval(tRef.current);
+    setUnit(u);setQuestions(genQs(u===2?u2W:u===3?u3W:u4W));
+    setQi(0);setCoins(0);setHp(10);setStreak(0);setBest(0);setTmr(20);setAns(false);
+    setHist([]);setHints(3);setRevL([]);setHUsed(false);setKilledV([]);
+    setCurV(null);setVHp(0);setVDead(false);setAMsg(null);setCurA(null);
+    setShop(false);setCards([]);setFelix(false);setTimeBst(0);setShield(false);
+    setSCatch(0);setBean(null);setHowler(false);setWrongRow(0);
+    setLocIdx(0);setEarnedAch([]);setFast(false);setSurv1(false);setHintEver(false);
+    setTimedOut(false);setShowAch(null);setShowCup(false);setVMsg(null);
+    setShowSp(false);setShowPat(false);setPeeves(null);setInk(false);
+    setSnitch(false);setShowSB(false);setShowLoc(false);setShowVI(false);
+    play("intro");setCd(3);setScreen("game");
+  };
+
+  const doAnswer=a=>{
+    if(ans||!cQ) return;
+    clearInterval(tRef.current);setAns(true);setSelOpt(a);
+    let correct;
+    if(felix){correct=true;setFelix(false);}
+    else correct=cQ.type==="type_en"?norm(a)===norm(cQ.answer):a===cQ.answer;
+    setOk(correct);
+    if(correct&&tmr>=17) setFast(true);
+
+    if(correct){
+      setSpC(pick(["#FF6B6B","#FFD700","#87CEEB","#4ECDC4"]));setShowSp(true);setTimeout(()=>setShowSp(false),600);
+      let pts=10+Math.max(0,tmr*2)+(streak>=2?(streak+1)*5:0)+(hUsed?-5:0);
+      if(wD?.power==="spell") pts=Math.round(pts*1.2);
+      if(wD?.power==="crit"&&Math.random()<0.25) pts*=2;
+      setCoins(p=>p+Math.max(5,pts));
+      const ns=streak+1;setStreak(ns);if(ns>best)setBest(ns);
+      play("spell");setWrongRow(0);
+      if(ns===5){setShowPat(true);play("patronus");setTimeout(()=>setShowPat(false),2200);}
+      if(ns===3||ns===7||ns===10) awardCard();
+      if(wD?.power==="heal"&&hp<mxHp&&ns%4===0) setHp(p=>Math.min(mxHp,p+1));
+
+      // Villain damage - clean, no setState inside setState
+      if(curV&&!vDead){
+        const newVHp=vHp-1;
+        setVHp(newVHp);setVShk(true);setTimeout(()=>setVShk(false),400);
+        if(newVHp<=0){
+          setVMsg(pick(curV.hit));
+          setTimeout(()=>{play("defeat");setVDead(true);setVMsg(curV.defeat);setKilledV(p=>[...p,curV.id]);awardCard();if(hp<mxHp){setHp(p=>Math.min(mxHp,p+2));play("heal");}setTimeout(()=>setShop(true),1200);},500);
+        } else {
+          setVMsg(pick(curV.hit));
+          setTimeout(()=>setVMsg(pick(curV.right)),600);
+        }
+      }
+      if(ns>=3&&ns%3===0) showAlly("combo"); else if(ns%2===0) showAlly("ok");
+    } else {
+      const wr=wrongRow+1;setWrongRow(wr);setStreak(0);
+      if(!shield) setHp(p=>{const n=Math.max(0,p-1);if(n===1)setSurv1(true);return n;});
+      else setShield(false);
+      play("hit");setPShk(true);setTimeout(()=>setPShk(false),500);
+      if(curV) setVMsg(pick(curV.wrong));
+      showAlly("bad");
+      if(wr>=3&&!howler){setHowler(true);play("howler");setTimeout(()=>setHowler(false),3500);}
+    }
+    setHist(p=>[...p,{q:cQ,correct,answer:a,timedOut:false}]);
+  };
+
+  const nextQ=()=>{
+    if(qi+1>=tQ||hp<=0){
+      play(hp<=0?"dark":"cup");
+      const s={bestStreak:best,fastAnswer:fast,survived1hp:surv1,bossKills:killedV.length,cards:cards.length,snitches:sCatch,noHint:!hintEver};
+      const earned=achievements.filter(a=>!earnedAch.includes(a.id)&&a.check(hist,s));
+      setEarnedAch(p=>[...p,...earned.map(a=>a.id)]);
+      if(earned.length>0){
+        setShowAch(earned[0]);play("ach");
+        setTimeout(()=>{setShowAch(null);setShowCup(true);play("cup");setTimeout(()=>{setShowCup(false);setScreen("results");},3500);},2500);
+      } else {
+        setShowCup(true);play("cup");setTimeout(()=>{setShowCup(false);setScreen("results");},3500);
+      }
+      return;
+    }
+    setQi(p=>p+1);setAns(false);setSelOpt(null);setTyped("");setOk(null);
+    setHUsed(false);setRevL([]);setVMsg(null);setAMsg(null);setCurA(null);
+    setTmr(timeBst>0?30:wD?.power==="time"?23:20);
+    if(timeBst>0) setTimeBst(p=>p-1);
+  };
+
+  const doHint=()=>{
+    if(hints<=0||hUsed||ans||!cQ) return;
+    play("hint");setHUsed(true);setHintEver(true);setHints(p=>p-1);
+    if(cQ.type==="type_en"){const idx=Array.from({length:cQ.answer.length},(_,i)=>i);setRevL(shuffle(idx).slice(0,Math.ceil(cQ.answer.length*0.4)));}
+    const h=allies.find(a=>a.id==="hermione");
+    if(h){setCurA(h);setAMsg(h.hint);setTimeout(()=>{setAMsg(null);setCurA(null);},2500);}
+  };
+
+  const buyP=p=>{
+    if(coins<p.cost) return;play("potion");setCoins(c=>c-p.cost);
+    if(p.id==="felix")setFelix(true);else if(p.id==="pepperup")setHp(h=>Math.min(mxHp,h+3));
+    else if(p.id==="wit")setHints(h=>h+2);else if(p.id==="time")setTimeBst(3);else if(p.id==="shield")setShield(true);
+  };
+
+  const tl=t=>({mc_ko:{i:"🔮",l:"Revelio"},mc_en:{i:"📜",l:"Accio"},type_en:{i:"🪄",l:"Scripto"},sentence:{i:"📖",l:"Completus"}}[t]||{i:"✨",l:""});
+  const gR=p=>{
+    if(p>=95)return{r:"O",t:"Outstanding",k:"특출나게 뛰어남",e:"🏆",c:"#FFD700"};
+    if(p>=85)return{r:"E",t:"Exceeds Expectations",k:"기대 이상",e:"⭐",c:"#60A5FA"};
+    if(p>=70)return{r:"A",t:"Acceptable",k:"합격",e:"✨",c:"#34D399"};
+    if(p>=50)return{r:"P",t:"Poor",k:"미흡",e:"📚",c:"#FBBF24"};
+    if(p>=30)return{r:"D",t:"Dreadful",k:"심히 부족",e:"😰",c:"#F87171"};
+    return{r:"T",t:"Troll",k:"트롤 수준",e:"🧌",c:"#9CA3AF"};
+  };
+
+  // HOME
+  if(screen==="home") return(<><style>{css}</style>
+    <div style={{minHeight:"100vh",background:BG,fontFamily:"'Cinzel',serif",display:"flex",alignItems:"center",justifyContent:"center",padding:14,position:"relative",overflow:"hidden"}}>
+      <Bg/><div style={{maxWidth:400,width:"100%",textAlign:"center",position:"relative",zIndex:1}}>
+        <div style={{fontSize:48,marginBottom:2,animation:"fl 3s ease-in-out infinite"}}>🧙‍♂️</div>
+        <h1 style={{color:"#D4A630",fontSize:22,fontWeight:800,letterSpacing:2,animation:"gg 3s infinite"}}>SPELL & STUDY</h1>
+        <p style={{color:"rgba(212,166,48,0.3)",fontSize:8,letterSpacing:4,marginBottom:3,fontFamily:"'Crimson Text',serif",fontStyle:"italic"}}>The Magical Vocabulary Academy</p>
+        <div style={{color:"rgba(255,255,255,0.15)",fontSize:9,fontFamily:"'Crimson Text',serif",fontStyle:"italic",marginBottom:16}}>"Words are our most inexhaustible source of magic."</div>
+        <div style={{display:"flex",justifyContent:"center",gap:6,marginBottom:18,flexWrap:"wrap"}}>
+          {["⚔️보스전","🧪물약상점","🏆스니치","🍫카드수집","👻피브스","🦌패트로누스","🪄지팡이","🗺️맵","🫘젤리빈","💌하울러","🏅업적"].map((f,i)=>
+            <div key={i} style={{background:"rgba(212,166,48,0.05)",border:"1px solid rgba(212,166,48,0.08)",borderRadius:6,padding:"3px 8px",fontSize:8,color:"rgba(212,166,48,0.5)",animation:`su 0.2s ease ${i*0.03}s both`}}>{f}</div>)}
+        </div>
+        <div style={{color:"rgba(212,166,48,0.5)",fontSize:11,fontWeight:600,marginBottom:10}}>기숙사를 선택하세요</div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:7}}>
+          {houses.map(h=><div key={h.id} onClick={()=>{play("sort");setHouse(h.id);setSortA(true);setTimeout(()=>{setSortA(false);setScreen("wand");},1800);}}
+            style={{background:h.bg,border:"1px solid rgba(255,255,255,0.07)",borderRadius:12,padding:"14px 6px",cursor:"pointer",transition:"all 0.3s"}}
+            onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-2px)";e.currentTarget.style.boxShadow=`0 5px 18px ${h.color}44`;}}
+            onMouseLeave={e=>{e.currentTarget.style.transform="none";e.currentTarget.style.boxShadow="none";}}>
+            <div style={{fontSize:24}}>{h.emoji}</div>
+            <div style={{color:h.c2,fontSize:11,fontWeight:700}}>{h.name}</div>
+            <div style={{color:"rgba(255,255,255,0.3)",fontSize:8}}>{h.nameKo}</div>
+          </div>)}
+        </div>
+      </div>
+      {sortA&&<OvLay><div style={{fontSize:60,animation:"sh 1.8s ease-in-out",marginBottom:8}}>🎩</div>
+        <div style={{color:"#D4A630",fontSize:18,fontWeight:700,animation:"su 0.5s ease 0.8s both"}}>{houses.find(h=>h.id===house)?.name}!</div></OvLay>}
+    </div></>);
+
+  // WAND
+  if(screen==="wand") return(<><style>{css}</style>
+    <div style={{minHeight:"100vh",background:BG,fontFamily:"'Cinzel',serif",display:"flex",alignItems:"center",justifyContent:"center",padding:14,position:"relative",overflow:"hidden"}}>
+      <Bg color={`${hD?.color}55`}/>
+      <div style={{maxWidth:400,width:"100%",textAlign:"center",position:"relative",zIndex:1}}>
+        <div style={{fontSize:36,marginBottom:4,animation:"fl 3s ease-in-out infinite"}}>🪄</div>
+        <h2 style={{color:"#D4A630",fontSize:16,fontWeight:700,marginBottom:2}}>올리밴더의 지팡이 가게</h2>
+        <p style={{color:"rgba(255,255,255,0.25)",fontSize:10,fontFamily:"'Crimson Text',serif",fontStyle:"italic",marginBottom:18}}>"지팡이가 마법사를 선택합니다."</p>
+        <div style={{display:"grid",gap:8}}>
+          {wands.map((w,i)=><div key={w.id} onClick={()=>{play("wand");setWand(w.id);setWandA(true);setTimeout(()=>{setWandA(false);setScreen("unitSelect");},1500);}}
+            style={{background:"rgba(255,255,255,0.03)",border:`1px solid ${w.color}33`,borderRadius:14,padding:"14px 16px",cursor:"pointer",transition:"all 0.3s",display:"flex",alignItems:"center",gap:12,animation:`su 0.3s ease ${i*0.1}s both`}}
+            onMouseEnter={e=>{e.currentTarget.style.borderColor=w.color;e.currentTarget.style.background="rgba(255,255,255,0.06)";}}
+            onMouseLeave={e=>{e.currentTarget.style.borderColor=w.color+"33";e.currentTarget.style.background="rgba(255,255,255,0.03)";}}>
+            <div style={{fontSize:24,width:42,height:42,background:`${w.color}15`,borderRadius:12,display:"flex",alignItems:"center",justifyContent:"center"}}>{w.emoji}</div>
+            <div style={{textAlign:"left",flex:1}}><div style={{color:w.color,fontSize:12,fontWeight:700}}>{w.nameKo}</div><div style={{color:"rgba(255,255,255,0.3)",fontSize:9}}>{w.desc}</div></div>
+          </div>)}
+        </div>
+      </div>
+      {wandA&&<OvLay><div style={{fontSize:48,animation:"wb 1s ease"}}>🪄</div>
+        <div style={{color:"#D4A630",fontSize:14,fontWeight:700,marginTop:8,animation:"su 0.4s ease 0.5s both"}}>{wands.find(w=>w.id===wand)?.nameKo}</div>
+        <div style={{color:"rgba(255,255,255,0.3)",fontSize:10,marginTop:4,animation:"su 0.4s ease 0.7s both"}}>이 지팡이가 당신을 선택했습니다!</div></OvLay>}
+    </div></>);
+
+  // UNIT SELECT
+  if(screen==="unitSelect") return(<><style>{css}</style>
+    <div style={{minHeight:"100vh",background:BG,fontFamily:"'Cinzel',serif",display:"flex",alignItems:"center",justifyContent:"center",padding:14,position:"relative",overflow:"hidden"}}>
+      <Bg color={`${hD?.color}44`}/>
+      <div style={{maxWidth:400,width:"100%",textAlign:"center",position:"relative",zIndex:1}}>
+        <div style={{display:"inline-flex",alignItems:"center",gap:4,background:"rgba(255,255,255,0.04)",borderRadius:30,padding:"3px 12px",marginBottom:4,fontSize:10}}>
+          <span>{hD?.emoji}</span><span style={{color:hD?.c2,fontWeight:600}}>{hD?.name}</span>
+          <span style={{color:"rgba(255,255,255,0.15)"}}>·</span>
+          <span>{wD?.emoji}</span><span style={{color:wD?.color,fontWeight:600,fontSize:9}}>{wD?.nameKo?.split("&")[0]}</span>
+        </div>
+        <h2 style={{color:"#D4A630",fontSize:16,fontWeight:700,marginTop:10,marginBottom:4}}>수업 선택</h2>
+        <div style={{height:30,overflow:"hidden",marginBottom:12,position:"relative"}}><div style={{position:"absolute",fontSize:24,animation:"trn 8s linear infinite"}}>🚂💨</div></div>
+        <div style={{display:"flex",justifyContent:"center",gap:3,marginBottom:14}}>
+          {villains.map((v,i)=><div key={i} style={{fontSize:16,opacity:0.45}}>{v.av}</div>)}
+        </div>
+        {[{n:2,t:"Healing & Society",i:"🧪"},{n:3,t:"Body & Potions",i:"⚗️"},{n:4,t:"Art & Culture",i:"🎨"}].map(u=>
+          <div key={u.n} onClick={()=>startGame(u.n)} style={{background:"rgba(255,255,255,0.03)",border:"1px solid rgba(212,166,48,0.1)",borderRadius:14,padding:"18px",marginBottom:8,cursor:"pointer",transition:"all 0.3s",display:"flex",alignItems:"center",gap:10}}
+            onMouseEnter={e=>{e.currentTarget.style.borderColor="#D4A630";}} onMouseLeave={e=>{e.currentTarget.style.borderColor="rgba(212,166,48,0.1)";}}>
+            <div style={{fontSize:26,width:42,height:42,background:"rgba(212,166,48,0.05)",borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center"}}>{u.i}</div>
+            <div style={{textAlign:"left"}}><div style={{color:"#D4A630",fontSize:13,fontWeight:700}}>Unit {u.n}: {u.t}</div>
+            <div style={{color:"rgba(255,255,255,0.2)",fontSize:8}}>25 rounds · 5 bosses</div></div>
+          </div>)}
+      </div>
+    </div></>);
+
+  // GAME
+  if(screen==="game"){
+    const ti=cQ?tl(cQ.type):{i:"✨",l:""};
+    const td=tmr<=4,tc=td?"#FF4444":tmr<=8?"#FBBF24":"#D4A630";
+    const hpP=(hp/mxHp)*100,vP=curV?(vHp/curV.hp)*100:0;
+
+    return(<><style>{css}</style>
+      {showSp&&<div style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:99,display:"flex",alignItems:"center",justifyContent:"center"}}><div style={{width:100,height:100,borderRadius:"50%",background:`radial-gradient(circle,${spC}88,transparent)`,animation:"sg 0.5s ease-out forwards",boxShadow:`0 0 60px ${spC}`}}/></div>}
+      {showPat&&<div style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:50,display:"flex",alignItems:"center",justifyContent:"center"}}><div style={{fontSize:70,animation:"pa 2s ease-out forwards",filter:"brightness(2) drop-shadow(0 0 25px rgba(200,220,255,0.7))",opacity:0}}>{hD?.pat}</div></div>}
+      {ink&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.85)",zIndex:80,pointerEvents:"none",animation:"inkS 2.5s ease-out forwards",display:"flex",alignItems:"center",justifyContent:"center"}}><div style={{fontSize:40}}>🖤</div></div>}
+
+      {snitch&&<div style={{position:"fixed",inset:0,zIndex:70}} onClick={e=>e.stopPropagation()}>
+        <div style={{position:"absolute",left:`${sPos.x}%`,top:`${sPos.y}%`,transition:"left 0.5s ease, top 0.5s ease",cursor:"pointer",zIndex:71}} onClick={()=>{if(snRef.current)clearInterval(snRef.current);setSnitch(false);setSCatch(p=>p+1);setCoins(p=>p+30);setShowSB(true);play("snitch");setTimeout(()=>setShowSB(false),1300);}}>
+          <div style={{fontSize:30,animation:"sm 0.7s ease-in-out infinite, sgl 1.3s ease infinite",userSelect:"none"}}>🏆</div>
+        </div>
+        <div style={{position:"absolute",top:12,left:"50%",transform:"translateX(-50%)",background:"rgba(255,215,0,0.12)",border:"1px solid rgba(255,215,0,0.25)",borderRadius:16,padding:"5px 14px",color:"#FFD700",fontSize:10,fontWeight:700}}>⚡ 스니치를 잡아라!</div>
+      </div>}
+      {showSB&&<div style={{position:"fixed",top:"35%",left:"50%",transform:"translateX(-50%)",zIndex:90,animation:"su 0.3s ease",pointerEvents:"none"}}><div style={{background:"linear-gradient(135deg,#FFD700,#FFA500)",padding:"8px 20px",borderRadius:14,color:"#1a1033",fontWeight:800,fontSize:14,boxShadow:"0 0 25px rgba(255,215,0,0.5)"}}>🏆 +30G!</div></div>}
+
+      {showCard&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.7)",zIndex:95,display:"flex",alignItems:"center",justifyContent:"center"}} onClick={()=>setShowCard(null)}>
+        <div style={{background:"linear-gradient(135deg,#2d1b4e,#1a0f30)",border:"2px solid #D4A630",borderRadius:14,padding:"20px",textAlign:"center",width:180,animation:"cr 0.8s ease",boxShadow:"0 0 35px rgba(212,166,48,0.3)"}}>
+          <div style={{color:"rgba(212,166,48,0.4)",fontSize:7,letterSpacing:3,marginBottom:4}}>CHOCOLATE FROG</div>
+          <div style={{fontSize:40,marginBottom:4}}>{showCard.emoji}</div>
+          <div style={{color:"#D4A630",fontSize:12,fontWeight:700}}>{showCard.name}</div>
+          <div style={{color:showCard.r==="L"?"#FFD700":showCard.r==="E"?"#A855F7":"#60A5FA",fontSize:8,marginTop:4}}>{showCard.r==="L"?"Legendary":showCard.r==="E"?"Epic":"Rare"}</div>
+        </div>
+      </div>}
+
+      {bean&&<div style={{position:"fixed",top:50,left:"50%",transform:"translateX(-50%)",zIndex:60,pointerEvents:"none",animation:"bB 0.6s ease"}}>
+        <div style={{background:bean.good?"rgba(52,211,153,0.15)":"rgba(239,68,68,0.15)",border:`1px solid ${bean.good?"rgba(52,211,153,0.3)":"rgba(239,68,68,0.3)"}`,borderRadius:12,padding:"7px 14px",display:"flex",alignItems:"center",gap:6}}>
+          <span style={{fontSize:18}}>{bean.emoji}</span>
+          <div><div style={{color:bean.good?"#34D399":"#EF4444",fontSize:9,fontWeight:700}}>🫘 {bean.name}</div><div style={{color:"rgba(255,255,255,0.5)",fontSize:9}}>{bean.desc}</div></div>
+        </div>
+      </div>}
+
+      {howler&&<div style={{position:"fixed",top:50,left:"50%",transform:"translateX(-50%)",zIndex:65,animation:"hw 0.3s ease infinite",pointerEvents:"none"}}>
+        <div style={{background:"rgba(200,0,0,0.2)",border:"1px solid rgba(200,0,0,0.4)",borderRadius:12,padding:"8px 16px",textAlign:"center"}}>
+          <div style={{fontSize:22}}>💌🔥</div><div style={{color:"#FF4444",fontSize:10,fontWeight:700}}>하울러!</div>
+          <div style={{color:"rgba(255,255,255,0.6)",fontSize:9,fontFamily:"'Crimson Text',serif",fontStyle:"italic"}}>"공부 좀 해라!! 3연속 틀리다니!!"</div>
+          <div style={{color:"rgba(255,255,255,0.3)",fontSize:8}}>— 위즐리 부인</div>
+        </div>
+      </div>}
+
+      {peeves&&<div style={{position:"fixed",top:50,left:"50%",transform:"translateX(-50%)",zIndex:60,animation:"pf 1s ease-in-out infinite",pointerEvents:"none"}}>
+        <div style={{background:"rgba(100,0,150,0.15)",border:"1px solid rgba(150,0,200,0.25)",borderRadius:12,padding:"6px 14px",display:"flex",alignItems:"center",gap:6}}>
+          <span style={{fontSize:18}}>👻</span><div><div style={{color:"#C084FC",fontSize:9,fontWeight:700}}>피브스!</div><div style={{color:"rgba(255,255,255,0.5)",fontSize:9}}>{peeves.emoji} {peeves.name}</div></div>
+        </div>
+      </div>}
+
+      {shop&&<OvLay bg="rgba(0,0,0,0.88)"><div style={{maxWidth:340,width:"100%",padding:14,animation:"su 0.3s ease"}}>
+        <div style={{textAlign:"center",marginBottom:12}}><div style={{fontSize:30}}>🧪</div><div style={{color:"#D4A630",fontSize:14,fontWeight:700}}>Potion Shop</div><div style={{color:"rgba(255,255,255,0.35)",fontSize:10}}>보유: <span style={{color:"#FFD700",fontWeight:700}}>{coins}G</span></div></div>
+        {potions.map(p=>{const canB=coins>=p.cost;return<div key={p.id} onClick={()=>canB&&buyP(p)}
+          style={{background:"rgba(255,255,255,0.03)",border:`1px solid ${canB?p.color+"33":"rgba(255,255,255,0.04)"}`,borderRadius:10,padding:"10px 12px",marginBottom:6,display:"flex",alignItems:"center",gap:8,cursor:canB?"pointer":"default",opacity:canB?1:0.35,transition:"all 0.2s"}}>
+          <div style={{flex:1}}><div style={{color:"white",fontSize:11,fontWeight:600}}>{p.nameKo}</div><div style={{color:"rgba(255,255,255,0.3)",fontSize:9}}>{p.desc}</div></div>
+          <div style={{color:"#FFD700",fontSize:11,fontWeight:700}}>{p.cost}G</div>
+        </div>;})}
+        <button onClick={()=>setShop(false)} style={{width:"100%",marginTop:6,padding:"10px",borderRadius:10,border:"1px solid rgba(212,166,48,0.15)",background:"rgba(212,166,48,0.05)",color:"#D4A630",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Cinzel',serif"}}>계속 전투! ⚔️</button>
+      </div></OvLay>}
+
+      {cd!==null&&cd>0&&<OvLay><div key={cd} style={{color:"#D4A630",fontSize:70,fontWeight:900,animation:"cp 0.8s ease forwards",textShadow:"0 0 35px rgba(212,166,48,0.5)"}}>{cd}</div></OvLay>}
+
+      {showVI&&curV&&<OvLay bg="rgba(0,0,0,0.9)">
+        <div style={{fontSize:56,animation:"va 0.8s ease",marginBottom:4}}>{curV.av}</div>
+        <div style={{color:"#FF4444",fontSize:16,fontWeight:800,animation:"su 0.4s ease 0.3s both"}}>{curV.name}</div>
+        <div style={{color:"rgba(255,255,255,0.3)",fontSize:10,animation:"su 0.4s ease 0.5s both"}}>{curV.nameKo}</div>
+        <div style={{color:"rgba(255,255,255,0.5)",fontSize:12,fontFamily:"'Crimson Text',serif",fontStyle:"italic",marginTop:8,animation:"su 0.4s ease 0.7s both"}}>"{curV.intro}"</div>
+      </OvLay>}
+
+      {showLoc&&<div style={{position:"fixed",top:0,left:0,right:0,zIndex:55,animation:"su 0.3s ease",pointerEvents:"none"}}>
+        <div style={{background:`linear-gradient(180deg,${loc.bg}ee,transparent)`,padding:"16px",textAlign:"center"}}>
+          <div style={{fontSize:28}}>{loc.emoji}</div><div style={{color:"#D4A630",fontSize:12,fontWeight:700}}>{loc.nameKo}</div><div style={{color:"rgba(255,255,255,0.3)",fontSize:9}}>{loc.name}</div>
+        </div>
+      </div>}
+
+      <div style={{minHeight:"100vh",background:BG,padding:"8px",animation:curV?.id==="voldemort"&&!vDead?"dp 3s infinite":"none"}}>
+        <div style={{maxWidth:500,margin:"0 auto",position:"relative",zIndex:1}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:3}}>
+            <div style={{display:"flex",alignItems:"center",gap:3}}>
+              <span style={{fontSize:10}}>{hD?.emoji}</span><span style={{color:"#FFD700",fontWeight:700,fontSize:11}}>{coins}G</span>
+              {shield&&<span style={{fontSize:9}}>🛡️</span>}
+            </div>
+            <div style={{display:"flex",alignItems:"center",gap:4}}>
+              {felix&&<span style={{fontSize:8,color:"#FFD700"}}>🍯</span>}
+              {timeBst>0&&<span style={{fontSize:8,color:"#C084FC"}}>⏳{timeBst}</span>}
+              {streak>=3&&<span style={{color:"#FFD700",fontSize:9,fontWeight:700}}>🔥{streak}</span>}
+              <span style={{color:"rgba(255,255,255,0.1)",fontSize:7}}>💡{hints}</span>
+              <button onClick={()=>setSnd(!snd)} style={{background:"none",border:"none",fontSize:11,cursor:"pointer",opacity:0.3}}>{snd?"🔊":"🔇"}</button>
+            </div>
+          </div>
+
+          <div style={{display:"flex",gap:2,marginBottom:3}}>
+            {locations.map((_l,i)=><div key={i} style={{flex:1,height:3,borderRadius:2,background:i<=locIdx?"linear-gradient(90deg,#D4A630,#FFD700)":"rgba(255,255,255,0.03)",transition:"background 0.5s"}}/>)}
+          </div>
+
+          <div style={{display:"flex",gap:4,marginBottom:4,alignItems:"center"}}>
+            <div style={{flex:1}}><div style={{height:5,background:"rgba(255,255,255,0.04)",borderRadius:5,overflow:"hidden",animation:hp<=3?"hpP 1s infinite":"none"}}><div style={{height:"100%",borderRadius:5,background:hpP>60?"linear-gradient(90deg,#34D399,#6EE7B7)":hpP>30?"linear-gradient(90deg,#FBBF24,#FDE68A)":"linear-gradient(90deg,#EF4444,#FCA5A5)",width:`${hpP}%`,transition:"width 0.5s"}}/></div></div>
+            <span style={{color:"rgba(255,255,255,0.1)",fontSize:10}}>⚔️</span>
+            <div style={{flex:1}}><div style={{height:5,background:"rgba(255,255,255,0.04)",borderRadius:5,overflow:"hidden"}}><div style={{height:"100%",borderRadius:5,background:"linear-gradient(90deg,#A855F7,#EC4899)",width:`${vP}%`,transition:"width 0.5s"}}/></div></div>
+          </div>
+          <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
+            <span style={{color:"rgba(255,255,255,0.25)",fontSize:7}}>🧙 HP {hp}/{mxHp}</span>
+            <span style={{color:"rgba(255,255,255,0.25)",fontSize:7}}>{curV?.av||""} {vDead?"처치!":(curV?.nameKo||"")} {curV?`${vHp}/${curV.hp}`:""}</span>
+          </div>
+
+          <div style={{height:2,background:"rgba(255,255,255,0.02)",borderRadius:6,marginBottom:7,overflow:"hidden"}}><div style={{height:"100%",borderRadius:6,background:"linear-gradient(90deg,#D4A630,#FFD700)",width:`${prog}%`,transition:"width 0.5s"}}/></div>
+
+          {cQ&&cd===null&&!showVI&&!shop&&(
+            <div key={qi} style={{animation:pShk?"sk 0.5s ease":"su 0.25s ease"}}>
+              {curV&&!vDead&&<div style={{textAlign:"center",marginBottom:5,animation:vShk?"sk 0.4s ease":"fl 3s ease-in-out infinite"}}><div style={{fontSize:36,filter:vShk?"brightness(2) saturate(0)":"none",transition:"filter 0.2s"}}>{curV.av}</div></div>}
+              {vDead&&curV&&<div style={{textAlign:"center",marginBottom:5}}><div style={{fontSize:36,animation:"cdd 1s ease forwards"}}>{curV.av}</div></div>}
+
+              {vMsg&&curV&&<Bub av={curV.av} name={curV.nameKo} text={vMsg} side="right" color={vDead?"#666":"#FF4444"}/>}
+              {aMsg&&curA&&<Bub av={curA.av} name={curA.k} text={aMsg} side="left" color="#34D399"/>}
+
+              {felix&&<div style={{textAlign:"center",marginBottom:6,animation:"gg 1s infinite"}}><span style={{background:"rgba(255,215,0,0.08)",border:"1px solid rgba(255,215,0,0.2)",borderRadius:10,padding:"3px 12px",fontSize:9,color:"#FFD700",fontWeight:700}}>🍯 Felix 발동! 자동 정답!</span></div>}
+
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:5}}>
+                <div style={{display:"flex",alignItems:"center",gap:4}}><span style={{fontSize:13}}>{ti.i}</span><div><div style={{color:"#D4A630",fontSize:10,fontWeight:700,fontFamily:"'MedievalSharp',cursive"}}>{ti.l}</div><div style={{color:"rgba(255,255,255,0.18)",fontSize:7}}>{qi+1}/{tQ}</div></div></div>
+                <div style={{width:34,height:34,borderRadius:"50%",border:`2px solid ${tc}`,display:"flex",alignItems:"center",justifyContent:"center",animation:td?"hpP 0.5s infinite":"none"}}><span style={{color:tc,fontWeight:800,fontSize:13}}>{tmr}</span></div>
+              </div>
+
+              <div style={{background:"rgba(20,15,30,0.85)",border:"1px solid rgba(212,166,48,0.08)",borderRadius:14,padding:"18px 14px",marginBottom:8,backdropFilter:"blur(10px)"}}>
+                {cQ.type==="mc_ko"&&<div style={{textAlign:"center",marginBottom:14}}><div style={{color:"rgba(212,166,48,0.3)",fontSize:8,marginBottom:3}}>이 주문의 뜻은?</div><div style={{color:"#D4A630",fontSize:24,fontWeight:800,fontFamily:"'MedievalSharp',cursive",animation:"gg 3s infinite"}}>{cQ.word.en}</div></div>}
+                {cQ.type==="mc_en"&&<div style={{textAlign:"center",marginBottom:14}}><div style={{color:"rgba(212,166,48,0.3)",fontSize:8,marginBottom:3}}>이 뜻의 주문은?</div><div style={{color:"white",fontSize:16,fontWeight:700}}>{cQ.word.ko}</div><div style={{color:"rgba(255,255,255,0.2)",fontSize:9,marginTop:3,fontFamily:"'Crimson Text',serif",fontStyle:"italic"}}>{cQ.word.def}</div></div>}
+                {cQ.type==="type_en"&&<div style={{textAlign:"center",marginBottom:14}}>
+                  <div style={{color:"rgba(212,166,48,0.3)",fontSize:8,marginBottom:3}}>주문을 쓰세요! ✍️</div>
+                  <div style={{color:"white",fontSize:15,fontWeight:700,marginBottom:2}}>{cQ.word.ko}</div>
+                  <div style={{color:"rgba(255,255,255,0.2)",fontSize:10,fontFamily:"'Crimson Text',serif",fontStyle:"italic"}}>{cQ.word.def}</div>
+                  {revL.length>0&&<div style={{display:"flex",justifyContent:"center",gap:2,marginTop:8}}>
+                    {cQ.answer.split("").map((ch,i)=><div key={i} style={{width:20,height:28,borderRadius:4,background:revL.includes(i)?"rgba(212,166,48,0.08)":"rgba(255,255,255,0.015)",border:`1px solid ${revL.includes(i)?"#D4A630":"rgba(255,255,255,0.04)"}`,display:"flex",alignItems:"center",justifyContent:"center",color:revL.includes(i)?"#D4A630":"transparent",fontFamily:"'MedievalSharp',cursive",fontWeight:700,fontSize:12,animation:revL.includes(i)?"rl 0.4s ease":"none"}}>{revL.includes(i)?ch:"·"}</div>)}
+                  </div>}
+                </div>}
+                {cQ.type==="sentence"&&<div style={{textAlign:"center",marginBottom:14}}><div style={{color:"rgba(212,166,48,0.3)",fontSize:8,marginBottom:5}}>주문서를 완성하세요!</div><div style={{color:"rgba(255,255,255,0.7)",fontSize:12,fontFamily:"'Crimson Text',serif",lineHeight:1.6}}>{cQ.sentence.split("_____").map((p,i,a)=><span key={i}>{p}{i<a.length-1&&<span style={{display:"inline-block",width:50,borderBottom:"2px dashed #D4A630",margin:"0 2px"}}/>}</span>)}</div></div>}
+
+                {(cQ.type==="mc_ko"||cQ.type==="mc_en"||cQ.type==="sentence")&&<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
+                  {cQ.options.map((o,i)=>{
+                    const isSel=selOpt===o,isAns=o===cQ.answer;
+                    let bg="rgba(255,255,255,0.02)",bd="rgba(255,255,255,0.05)",tx="rgba(255,255,255,0.7)";
+                    if(ans){if(isAns){bg="rgba(52,211,153,0.08)";bd="#34D399";tx="#34D399";}else if(isSel&&!ok){bg="rgba(239,68,68,0.08)";bd="#EF4444";tx="#EF4444";}else tx="rgba(255,255,255,0.1)";}
+                    return<button key={i} onClick={()=>{play("select");doAnswer(o);}} disabled={ans}
+                      style={{background:bg,border:`1.5px solid ${bd}`,borderRadius:9,padding:"10px 8px",cursor:ans?"default":"pointer",transition:"all 0.2s",color:tx,fontSize:11,fontWeight:600,fontFamily:"'Cinzel',serif",...(ans&&isAns?{animation:"pi 0.3s ease"}:{})}}
+                      onMouseEnter={e=>{if(!ans){e.currentTarget.style.borderColor="#D4A630";e.currentTarget.style.background="rgba(212,166,48,0.04)";}}}
+                      onMouseLeave={e=>{if(!ans){e.currentTarget.style.borderColor="rgba(255,255,255,0.05)";e.currentTarget.style.background="rgba(255,255,255,0.02)";}}}>{o}</button>;
+                  })}
+                </div>}
+                {cQ.type==="type_en"&&!ans&&<div>
+                  <input ref={iRef} value={typed} onChange={e=>setTyped(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&typed.trim())doAnswer(typed);}} placeholder="Cast your spell..."
+                    style={{width:"100%",padding:"10px 12px",borderRadius:9,border:"1.5px solid rgba(212,166,48,0.12)",background:"rgba(255,255,255,0.02)",color:"#D4A630",fontSize:15,fontFamily:"'MedievalSharp',cursive",textAlign:"center"}}/>
+                  <button onClick={()=>{if(typed.trim())doAnswer(typed);}} disabled={!typed.trim()}
+                    style={{width:"100%",marginTop:6,padding:"9px",borderRadius:9,border:"none",background:typed.trim()?"linear-gradient(135deg,#D4A630,#B8860B)":"rgba(255,255,255,0.02)",color:typed.trim()?"#1a1033":"rgba(255,255,255,0.08)",fontSize:12,fontWeight:700,cursor:typed.trim()?"pointer":"default",fontFamily:"'Cinzel',serif"}}>Stupefy! ⚡</button>
+                </div>}
+                {cQ.type==="type_en"&&ans&&<div style={{textAlign:"center"}}><div style={{fontSize:15,fontFamily:"'MedievalSharp',cursive",fontWeight:700,color:ok?"#34D399":"#EF4444"}}>{typed||"(시간 초과)"}</div>
+                  {!ok&&<div style={{color:"#34D399",fontSize:10,marginTop:4}}>정답: <b>{cQ.answer}</b></div>}</div>}
+              </div>
+
+              {ans&&<div style={{animation:"su 0.2s ease"}}><div style={{textAlign:"center",marginBottom:5}}><span style={{fontSize:26,animation:"pi 0.3s ease",display:"inline-block"}}>{ok?"⚡":"💔"}</span></div>
+                <button onClick={nextQ} style={{width:"100%",padding:"11px",borderRadius:10,border:"1px solid rgba(212,166,48,0.12)",background:"rgba(212,166,48,0.04)",color:"#D4A630",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Cinzel',serif"}}
+                  onMouseEnter={e=>e.currentTarget.style.background="rgba(212,166,48,0.07)"} onMouseLeave={e=>e.currentTarget.style.background="rgba(212,166,48,0.04)"}>
+                  {hp<=0||qi+1>=tQ?"결과 보기 →":"다음 주문 →"}</button>
+              </div>}
+              {!ans&&hints>0&&cQ.type==="type_en"&&<button onClick={doHint} style={{width:"100%",marginTop:3,padding:"7px",borderRadius:7,border:"1px solid rgba(255,255,255,0.03)",background:"rgba(255,255,255,0.01)",color:"rgba(212,166,48,0.25)",fontSize:9,cursor:"pointer"}}>💡 Hint ({hints})</button>}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {showAch&&<OvLay bg="rgba(0,0,0,0.8)"><div style={{animation:"achP 0.6s ease",textAlign:"center"}}><div style={{fontSize:56}}>{showAch.emoji}</div><div style={{color:"#FFD700",fontSize:14,fontWeight:700,marginTop:6}}>🏅 업적 달성!</div><div style={{color:"white",fontSize:16,fontWeight:800,marginTop:4}}>{showAch.name}</div><div style={{color:"rgba(255,255,255,0.4)",fontSize:10,marginTop:2}}>{showAch.desc}</div></div></OvLay>}
+      {showCup&&<OvLay bg="rgba(0,0,0,0.9)"><div style={{textAlign:"center",animation:"su 0.5s ease"}}><div style={{fontSize:56,animation:"cspin 2s linear infinite"}}>🏆</div><div style={{color:"#FFD700",fontSize:18,fontWeight:800,marginTop:8,animation:"gg 1.5s infinite"}}>House Cup</div><div style={{display:"flex",alignItems:"center",gap:6,marginTop:10,justifyContent:"center"}}><span style={{fontSize:28}}>{hD?.emoji}</span><div><div style={{color:hD?.c2,fontSize:20,fontWeight:900}}>{coins}pts</div><div style={{color:"rgba(255,255,255,0.3)",fontSize:10}}>{hD?.name}</div></div></div></div></OvLay>}
+    </>);
+  }
+
+  // RESULTS
+  if(screen==="results"){
+    const cc=hist.filter(h=>h.correct).length;
+    const pct=tQ>0?Math.round((cc/tQ)*100):0;
+    const rank=gR(pct);
+    const wrong=[...new Map(hist.filter(h=>!h.correct&&h.q).map(h=>[h.q.word.en,h.q.word])).values()];
+    const bt={mc_ko:hist.filter(h=>h.q&&h.q.type==="mc_ko"),mc_en:hist.filter(h=>h.q&&h.q.type==="mc_en"),type_en:hist.filter(h=>h.q&&h.q.type==="type_en"),sentence:hist.filter(h=>h.q&&h.q.type==="sentence")};
+    const ts=Object.entries(bt).map(([t,it])=>({t,tot:it.length,ok:it.filter(i=>i.correct).length,...tl(t)})).filter(x=>x.tot>0);
+    const wk=ts.length>0?[...ts].sort((a,b)=>(a.ok/(a.tot||1))-(b.ok/(b.tot||1)))[0]:null;
+    const dm=pct>=95?"네가 이 학교 최고의 학생이란다!":pct>=85?"아주 훌륭하구나!":pct>=70?"잘했다!":pct>=50?"포기하지 마.":"연습이 필요하구나.";
+    const fc=frogCards.filter(c=>cards.includes(c.id));
+    const ea=achievements.filter(a=>earnedAch.includes(a.id));
+
+    return(<><style>{css}</style>
+      <div style={{minHeight:"100vh",background:BG,fontFamily:"'Cinzel',serif",padding:"12px",position:"relative"}}>
+        <Bg color="rgba(212,166,48,0.2)"/>
+        <div style={{maxWidth:460,margin:"0 auto",position:"relative",zIndex:1}}>
+          <div style={{textAlign:"center",marginBottom:4,animation:"su 0.3s ease"}}><div style={{color:"rgba(212,166,48,0.25)",fontSize:7,letterSpacing:4}}>THE DAILY PROPHET</div><div style={{color:"rgba(255,255,255,0.1)",fontSize:7,fontFamily:"'Crimson Text',serif"}}>마법 세계의 뉴스</div></div>
+
+          <div style={{background:"linear-gradient(180deg,rgba(40,30,20,0.95),rgba(30,20,10,0.95))",border:"2px solid rgba(212,166,48,0.2)",borderRadius:4,padding:"22px 16px",textAlign:"center",marginBottom:12,boxShadow:"0 12px 40px rgba(0,0,0,0.5)",animation:"su 0.4s ease",position:"relative"}}>
+            <div style={{position:"absolute",top:4,left:4,right:4,bottom:4,border:"1px solid rgba(212,166,48,0.05)",borderRadius:2,pointerEvents:"none"}}/>
+            <div style={{color:"rgba(212,166,48,0.3)",fontSize:7,letterSpacing:3,marginBottom:2}}>O.W.L. EXAMINATION</div>
+            <div style={{fontSize:44,animation:"pi 0.6s ease 0.2s both"}}>{rank.e}</div>
+            <div style={{color:rank.c,fontSize:44,fontWeight:900,lineHeight:1,textShadow:`0 0 20px ${rank.c}44`}}>{rank.r}</div>
+            <div style={{color:rank.c,fontSize:12,fontWeight:600,letterSpacing:2}}>{rank.t}</div>
+            <div style={{color:"rgba(255,255,255,0.25)",fontSize:9}}>{rank.k}</div>
+            <div style={{display:"flex",justifyContent:"center",gap:14,marginTop:12,paddingTop:10,borderTop:"1px solid rgba(212,166,48,0.06)"}}>
+              {[{v:coins,l:"Gold"},{v:`${cc}/${hist.length}`,l:"정답"},{v:best,l:"콤보"},{v:killedV.length,l:"보스"},{v:sCatch,l:"스니치"},{v:fc.length,l:"카드"}].map((s,i)=>
+                <div key={i}><div style={{color:"#D4A630",fontSize:14,fontWeight:800}}>{s.v}</div><div style={{color:"rgba(255,255,255,0.18)",fontSize:7}}>{s.l}</div></div>)}
+            </div>
+          </div>
+
+          <Bub av="🧙‍♂️" name="덤블도어" text={dm} side="left" color="#D4A630"/>
+
+          {ea.length>0&&<div style={{background:"rgba(20,15,30,0.8)",border:"1px solid rgba(212,166,48,0.08)",borderRadius:12,padding:"12px",marginBottom:10,animation:"su 0.4s ease 0.1s both"}}><h3 style={{color:"#D4A630",fontSize:11,fontWeight:700,marginBottom:8}}>🏅 업적</h3><div style={{display:"flex",gap:8,flexWrap:"wrap"}}>{ea.map((a,i)=><div key={i} style={{textAlign:"center"}}><div style={{fontSize:22}}>{a.emoji}</div><div style={{color:"rgba(255,255,255,0.5)",fontSize:7}}>{a.name}</div></div>)}</div></div>}
+
+          {fc.length>0&&<div style={{background:"rgba(20,15,30,0.8)",border:"1px solid rgba(212,166,48,0.08)",borderRadius:12,padding:"12px",marginBottom:10,animation:"su 0.4s ease 0.15s both"}}><h3 style={{color:"#D4A630",fontSize:11,fontWeight:700,marginBottom:8}}>🍫 카드 ({fc.length}/{frogCards.length})</h3><div style={{display:"flex",gap:6,flexWrap:"wrap",justifyContent:"center"}}>{frogCards.map((c,i)=>{const o=cards.includes(c.id);return<div key={i} style={{width:44,textAlign:"center",opacity:o?1:0.12}}><div style={{fontSize:18}}>{o?c.emoji:"❓"}</div><div style={{color:"rgba(255,255,255,0.35)",fontSize:6}}>{o?c.name:"???"}</div></div>;})}</div></div>}
+
+          <div style={{background:"rgba(20,15,30,0.8)",border:"1px solid rgba(212,166,48,0.08)",borderRadius:12,padding:"12px",marginBottom:10,animation:"su 0.4s ease 0.2s both"}}><h3 style={{color:"#D4A630",fontSize:11,fontWeight:700,marginBottom:6}}>⚔️ 보스</h3><div style={{display:"flex",gap:5,justifyContent:"center"}}>{villains.map((v,i)=>{const b=killedV.includes(v.id);return<div key={i} style={{textAlign:"center",opacity:b?1:0.15}}><div style={{fontSize:20}}>{v.av}</div><div style={{color:b?"#34D399":"rgba(255,255,255,0.3)",fontSize:6}}>{v.nameKo}</div></div>;})}</div></div>
+
+          <div style={{background:"rgba(20,15,30,0.8)",border:"1px solid rgba(212,166,48,0.08)",borderRadius:12,padding:"12px",marginBottom:10,animation:"su 0.4s ease 0.25s both"}}><h3 style={{color:"#D4A630",fontSize:11,fontWeight:700,marginBottom:8}}>📊 분석</h3>
+            {ts.map((t,i)=>{const p=t.tot>0?Math.round((t.ok/t.tot)*100):0;return<div key={i} style={{marginBottom:7}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:2}}><span style={{color:"rgba(255,255,255,0.35)",fontSize:9}}>{t.i} {t.l}</span><span style={{color:"#D4A630",fontSize:9,fontWeight:700}}>{t.ok}/{t.tot}</span></div><div style={{height:4,background:"rgba(255,255,255,0.03)",borderRadius:4,overflow:"hidden"}}><div style={{height:"100%",borderRadius:4,background:p>=80?"linear-gradient(90deg,#34D399,#6EE7B7)":p>=50?"linear-gradient(90deg,#FBBF24,#FDE68A)":"linear-gradient(90deg,#EF4444,#FCA5A5)",width:`${p}%`,animation:"bf 1s ease"}}/></div></div>;})}
+            {wk&&<div style={{background:"rgba(212,166,48,0.03)",borderRadius:6,padding:"6px 8px",marginTop:5}}><div style={{color:"#D4A630",fontSize:9,fontWeight:600}}>⚠️ 약점: {wk.l}</div></div>}
+          </div>
+
+          {wrong.length>0&&<div style={{background:"rgba(20,15,30,0.8)",border:"1px solid rgba(212,166,48,0.08)",borderRadius:12,padding:"12px",marginBottom:10,animation:"su 0.4s ease 0.3s both"}}><h3 style={{color:"#D4A630",fontSize:11,fontWeight:700,marginBottom:6}}>📖 복습 ({wrong.length})</h3>{wrong.map((w,i)=><div key={i} style={{display:"flex",justifyContent:"space-between",padding:"4px 0",borderBottom:i<wrong.length-1?"1px solid rgba(255,255,255,0.02)":"none"}}><span style={{color:"#EF4444",fontFamily:"'MedievalSharp',cursive",fontWeight:700,fontSize:11}}>{w.en}</span><span style={{color:"rgba(255,255,255,0.3)",fontSize:9}}>{w.ko}</span></div>)}</div>}
+
+          <div style={{display:"flex",gap:8,marginBottom:24,animation:"su 0.4s ease 0.35s both"}}>
+            <button onClick={()=>startGame(unit)} style={{flex:1,padding:"11px",borderRadius:10,border:"1px solid rgba(212,166,48,0.12)",background:"rgba(212,166,48,0.04)",color:"#D4A630",fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"'Cinzel',serif"}}>🔄 다시</button>
+            <button onClick={()=>setScreen("unitSelect")} style={{flex:1,padding:"11px",borderRadius:10,border:"none",background:"linear-gradient(135deg,#D4A630,#B8860B)",color:"#1a1033",fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"'Cinzel',serif",boxShadow:"0 3px 14px rgba(212,166,48,0.3)"}}>🏰 홈</button>
+          </div>
+        </div>
+      </div></>);
+  }
+  return null;
+}
