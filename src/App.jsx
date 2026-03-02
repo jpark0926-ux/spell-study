@@ -404,6 +404,8 @@ export default function App(){
   const[wand,setWand]=useState(null);
   const[unit,setUnit]=useState(null);
   const[tbMode,setTbMode]=useState(false);
+  const[playerName,setPlayerName]=useState("");
+  const[nameInput,setNameInput]=useState("");
   const[questions,setQuestions]=useState([]);
   const[qi,setQi]=useState(0);
   const[coins,setCoins]=useState(0);
@@ -511,10 +513,12 @@ export default function App(){
     })
   }, [user, authReady])
 
-  // auth 완료 후 home 화면으로 자동 전환
+  // auth 완료 후 이름 입력 화면으로
   useEffect(() => {
     if (authReady && screen === "auth" && user) {
-      setScreen("home")
+      const defaultName = user.user_metadata?.full_name || user.email?.split("@")[0] || "";
+      setNameInput(defaultName);
+      setScreen("nameInput");
     }
   }, [authReady, user, screen])
 
@@ -740,6 +744,30 @@ export default function App(){
   };
 
   // AUTH
+  if(screen==="nameInput") return(<><style>{css}</style>
+    <div style={{minHeight:"100vh",background:BG,fontFamily:"'Cinzel',serif",display:"flex",alignItems:"center",justifyContent:"center",padding:14,position:"relative",overflow:"hidden"}}>
+      <Bg/>
+      <div style={{maxWidth:400,width:"100%",textAlign:"center",position:"relative",zIndex:1}}>
+        <div style={{fontSize:48,marginBottom:8,animation:"fl 3s ease-in-out infinite"}}>⚡</div>
+        <h2 style={{color:"#D4A630",fontSize:18,fontWeight:700,marginBottom:6,letterSpacing:1}}>마법사 이름을 정하세요</h2>
+        <p style={{color:"rgba(212,166,48,0.5)",fontSize:12,marginBottom:20}}>리더보드에 이 이름으로 표시됩니다</p>
+        <input
+          value={nameInput}
+          onChange={e=>setNameInput(e.target.value)}
+          onKeyDown={e=>{if(e.key==="Enter"&&nameInput.trim()){setPlayerName(nameInput.trim());setScreen("home");}}}
+          placeholder="이름 입력..."
+          maxLength={20}
+          style={{width:"100%",padding:"14px 18px",borderRadius:14,border:"1px solid rgba(212,166,48,0.4)",background:"rgba(212,166,48,0.05)",color:"#D4A630",fontSize:16,fontFamily:"inherit",textAlign:"center",outline:"none",marginBottom:14,boxSizing:"border-box"}}
+          autoFocus
+        />
+        <button
+          onClick={()=>{if(nameInput.trim()){setPlayerName(nameInput.trim());setScreen("home");}}}
+          disabled={!nameInput.trim()}
+          style={{width:"100%",padding:"14px",borderRadius:14,border:"none",background:nameInput.trim()?"linear-gradient(135deg,#D4A630,#B8860B)":"rgba(212,166,48,0.1)",color:nameInput.trim()?"#1a1033":"rgba(212,166,48,0.3)",fontSize:14,fontWeight:700,cursor:nameInput.trim()?"pointer":"not-allowed",fontFamily:"'Cinzel',serif",transition:"all 0.2s"}}
+        >호그와트 입학 →</button>
+      </div>
+    </div></>);
+
   if(screen==="auth") return(<><style>{css}</style>
     <div style={{minHeight:"100vh",background:BG,fontFamily:"'Cinzel',serif",display:"flex",alignItems:"center",justifyContent:"center",padding:14,position:"relative",overflow:"hidden"}}>
       <Bg/>
@@ -748,7 +776,7 @@ export default function App(){
         <h1 style={{color:"#D4A630",fontSize:22,fontWeight:800,letterSpacing:2,animation:"gg 3s infinite",marginBottom:24}}>SPELL & STUDY</h1>
         <Auth
           user={user}
-          onGuestMode={() => setScreen("home")}
+          onGuestMode={() => { setNameInput(""); setScreen("nameInput"); }}
         />
       </div>
     </div>
