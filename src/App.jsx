@@ -97,6 +97,9 @@ const tbChapters=[
     {en:"salmon",ko:"연어",def:"a medium-sized fish with pink flesh",sent:"I ate grilled _____ for lunch."},
     {en:"wreck",ko:"망가뜨리다",def:"to destroy or badly damage",sent:"The speeding driver _____ed his car."},
   ]},
+  {n:2,t:"Health & Society",i:"🧪",words:u2W},
+  {n:3,t:"Body & Medicine",i:"⚗️",words:u3W},
+  {n:4,t:"Art & Culture",i:"🎨",words:u4W},
   {n:5,t:"Nature & Farming",i:"🌾",words:[
     {en:"abundant",ko:"풍부한",def:"existing or available in large quantities",sent:"Fruit is _____ in summer."},
     {en:"consistent",ko:"일관된",def:"always behaving or happening in a similar way",sent:"Her results are _____ every time."},
