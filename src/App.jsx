@@ -284,6 +284,8 @@ const potions=[
   {id:"wit",nameKo:"재치강화제 💡",desc:"힌트 +2",cost:20,color:"#60A5FA"},
   {id:"time",nameKo:"시간의 모래시계 ⏳",desc:"3문제 타이머 30초",cost:35,color:"#C084FC"},
   {id:"shield",nameKo:"방어의 물약 🛡️",desc:"다음 1회 피격 무시",cost:30,color:"#F59E0B"},
+  {id:"freeze",nameKo:"시간 정지 ❄️",desc:"타이머 5초 정지",cost:40,color:"#60A5FA"},
+  {id:"skip",nameKo:"문제 스킵 ⏭️",desc:"현재 문제 패스",cost:35,color:"#F97316"},
 ];
 
 const beans=[
@@ -418,6 +420,11 @@ const css=`
 @keyframes bB{0%{transform:translateY(0)}50%{transform:translateY(-20px)}100%{transform:translateY(0)}}
 @keyframes trn{0%{transform:translateX(-100%)}100%{transform:translateX(100vw)}}
 @keyframes achP{0%{transform:scale(0) rotate(-10deg)}50%{transform:scale(1.2) rotate(5deg)}100%{transform:scale(1) rotate(0)}}
+@keyframes bossFlash{0%{opacity:0;transform:scale(1.4)}25%{opacity:0.9;transform:scale(1)}80%{opacity:0.6}100%{opacity:0;transform:scale(1.05)}}
+@keyframes sparks{0%{transform:scale(0);opacity:1}100%{transform:scale(4);opacity:0}}
+@keyframes lgBurst{0%{transform:scale(0);opacity:1;filter:brightness(5)}60%{transform:scale(2.5);opacity:0.5}100%{transform:scale(5);opacity:0}}
+@keyframes legendTxt{0%{transform:scale(0) rotate(-15deg);opacity:0}60%{transform:scale(1.3);opacity:1}100%{transform:scale(1);opacity:1}}
+@keyframes card3dFlip{0%{transform:perspective(800px) rotateY(0deg)}50%{transform:perspective(800px) rotateY(90deg)}100%{transform:perspective(800px) rotateY(0deg)}}
 input:focus{outline:none;border-color:#D4A630 !important;box-shadow:0 0 0 3px rgba(212,166,48,0.2);}
 `;
 
@@ -495,6 +502,8 @@ export default function App(){
   const[showLoc,setShowLoc]=useState(false);
   const[showCup,setShowCup]=useState(false);
   const[timedOut,setTimedOut]=useState(false);
+  const[freezeTimer,setFreezeTimer]=useState(false);
+  const[comboBurst,setComboBurst]=useState(null);
   const tRef=useRef(null);
   const iRef=useRef(null);
   const snRef=useRef(null);
@@ -576,13 +585,13 @@ export default function App(){
       setShowVI(true);setVMsg(v.intro);play("dark");
       setLocIdx(vi);setShowLoc(true);
       setTimeout(()=>setShowLoc(false),1500);
-      setTimeout(()=>setShowVI(false),2200);
+      setTimeout(()=>setShowVI(false),2500);
     }
   },[qi,screen,cd]);
 
   // Timer: pure countdown only
   useEffect(()=>{
-    if(screen!=="game"||ans||cd!==null||showVI||shop||snitch) return;
+    if(screen!=="game"||ans||cd!==null||showVI||shop||snitch||freezeTimer) return;
     tRef.current=setInterval(()=>{
       setTmr(prev=>{
         if(prev<=1) return 0;
@@ -590,7 +599,7 @@ export default function App(){
       });
     },1000);
     return()=>clearInterval(tRef.current);
-  },[screen,qi,ans,cd,showVI,shop,snitch]);
+  },[screen,qi,ans,cd,showVI,shop,snitch,freezeTimer]);
 
   // Tick sound separate from updater
   useEffect(()=>{if(tmr===4&&screen==="game"&&!ans) play("tick");},[tmr]);
@@ -662,7 +671,7 @@ export default function App(){
     setQi(0);setCoins(0);setHp(10);setStreak(0);setBest(0);setTmr(20);setAns(false);
     setHist([]);setHints(3);setRevL([]);setHUsed(false);setKilledV([]);
     setCurV(null);setVHp(0);setVDead(false);setAMsg(null);setCurA(null);
-    setShop(false);setCards([]);setFelix(false);setTimeBst(0);setShield(false);
+    setShop(false);setCards([]);setFelix(false);setTimeBst(0);setShield(false);setFreezeTimer(false);setComboBurst(null);
     setSCatch(0);setBean(null);setHowler(false);setWrongRow(0);
     setLocIdx(0);setEarnedAch([]);setFast(false);setSurv1(false);setHintEver(false);
     setTimedOut(false);setShowAch(null);setShowCup(false);setVMsg(null);
@@ -690,6 +699,9 @@ export default function App(){
       play("spell");setWrongRow(0);
       if(ns===5){setShowPat(true);play("patronus");setTimeout(()=>setShowPat(false),2200);}
       if(ns===3||ns===7||ns===10) awardCard();
+      if(ns===3){setComboBurst("sparks");setTimeout(()=>setComboBurst(null),1000);}
+      if(ns===5){setComboBurst("lightning");setTimeout(()=>setComboBurst(null),1200);}
+      if(ns>=7){setComboBurst("legendary");setTimeout(()=>setComboBurst(null),2000);}
       if(wD?.power==="heal"&&hp<mxHp&&ns%4===0) setHp(p=>Math.min(mxHp,p+1));
 
       // Villain damage - clean, no setState inside setState
@@ -763,6 +775,8 @@ export default function App(){
     if(coins<p.cost) return;play("potion");setCoins(c=>c-p.cost);
     if(p.id==="felix")setFelix(true);else if(p.id==="pepperup")setHp(h=>Math.min(mxHp,h+3));
     else if(p.id==="wit")setHints(h=>h+2);else if(p.id==="time")setTimeBst(3);else if(p.id==="shield")setShield(true);
+    else if(p.id==="freeze"){setFreezeTimer(true);setTimeout(()=>setFreezeTimer(false),5000);}
+    else if(p.id==="skip"){setShop(false);setTimeout(()=>nextQ(),50);}
   };
 
   const tl=t=>({mc_ko:{i:"🔮",l:"Revelio"},mc_en:{i:"📜",l:"Accio"},type_en:{i:"🪄",l:"Scripto"},sentence:{i:"📖",l:"Completus"}}[t]||{i:"✨",l:""});
@@ -1001,27 +1015,28 @@ export default function App(){
           ) : (
             /* Flashcard */
             <div>
-              <div onClick={()=>!studyFlipped&&setStudyFlipped(true)}
-                style={{minHeight:280,background:"linear-gradient(145deg,rgba(45,27,78,0.95),rgba(26,15,48,0.98))",border:`2px solid ${studyFlipped?"#63B3ED":"rgba(212,166,48,0.3)"}`,borderRadius:20,padding:"28px 24px",cursor:studyFlipped?"default":"pointer",transition:"border-color 0.3s",boxShadow:`0 8px 32px rgba(0,0,0,0.4)`,textAlign:"center",display:"flex",flexDirection:"column",justifyContent:"center",gap:14}}>
-                
-                {/* English word */}
-                <div style={{fontSize:32,fontWeight:800,color:"#D4A630",letterSpacing:1}}>{word?.en}</div>
-                
-                {/* Example sentence with blank */}
-                <div style={{fontSize:13,color:"rgba(255,255,255,0.5)",fontStyle:"italic",lineHeight:1.6,fontFamily:"Georgia,serif"}}>
-                  {sentDisplay}
-                </div>
+              {/* 3D flip wrapper */}
+              <div style={{perspective:"1000px",height:280,position:"relative"}}>
+                <div onClick={()=>!studyFlipped&&setStudyFlipped(true)}
+                  style={{width:"100%",height:"100%",position:"relative",transformStyle:"preserve-3d",transform:studyFlipped?"rotateY(180deg)":"rotateY(0deg)",transition:"transform 0.55s cubic-bezier(0.4,0,0.2,1)",cursor:studyFlipped?"default":"pointer"}}>
 
-                {!studyFlipped && (
-                  <div style={{color:"rgba(212,166,48,0.3)",fontSize:11,marginTop:8}}>👆 탭해서 정답 확인</div>
-                )}
-
-                {studyFlipped && (
-                  <div style={{borderTop:"1px solid rgba(99,179,237,0.2)",paddingTop:14,animation:"fi 0.3s ease"}}>
-                    <div style={{fontSize:22,fontWeight:700,color:"#63B3ED",marginBottom:6}}>{word?.ko}</div>
-                    <div style={{fontSize:11,color:"rgba(255,255,255,0.4)",lineHeight:1.5,fontFamily:"Georgia,serif"}}>{word?.def}</div>
+                  {/* FRONT face */}
+                  <div style={{position:"absolute",top:0,left:0,right:0,bottom:0,backfaceVisibility:"hidden",WebkitBackfaceVisibility:"hidden",background:"linear-gradient(145deg,rgba(45,27,78,0.95),rgba(26,15,48,0.98))",border:"2px solid rgba(212,166,48,0.3)",borderRadius:20,padding:"28px 24px",boxShadow:"0 8px 32px rgba(0,0,0,0.4)",textAlign:"center",display:"flex",flexDirection:"column",justifyContent:"center",gap:14}}>
+                    <div style={{fontSize:32,fontWeight:800,color:"#D4A630",letterSpacing:1}}>{word?.en}</div>
+                    <div style={{fontSize:13,color:"rgba(255,255,255,0.5)",fontStyle:"italic",lineHeight:1.6,fontFamily:"Georgia,serif"}}>{word?.sent.replace("_____","_____")}</div>
+                    <div style={{color:"rgba(212,166,48,0.3)",fontSize:11,marginTop:8}}>👆 탭해서 정답 확인</div>
                   </div>
-                )}
+
+                  {/* BACK face */}
+                  <div style={{position:"absolute",top:0,left:0,right:0,bottom:0,backfaceVisibility:"hidden",WebkitBackfaceVisibility:"hidden",transform:"rotateY(180deg)",background:"linear-gradient(145deg,rgba(26,45,78,0.95),rgba(15,26,55,0.98))",border:"2px solid #63B3ED",borderRadius:20,padding:"28px 24px",boxShadow:"0 8px 32px rgba(0,0,0,0.4),0 0 25px rgba(99,179,237,0.15)",textAlign:"center",display:"flex",flexDirection:"column",justifyContent:"center",gap:14}}>
+                    <div style={{fontSize:32,fontWeight:800,color:"#D4A630",letterSpacing:1}}>{word?.en}</div>
+                    <div style={{fontSize:13,color:"rgba(255,255,255,0.5)",fontStyle:"italic",lineHeight:1.6,fontFamily:"Georgia,serif"}}>{word?.sent.replace("_____",`[${word?.en}]`)}</div>
+                    <div style={{borderTop:"1px solid rgba(99,179,237,0.2)",paddingTop:14}}>
+                      <div style={{fontSize:22,fontWeight:700,color:"#63B3ED",marginBottom:6}}>{word?.ko}</div>
+                      <div style={{fontSize:11,color:"rgba(255,255,255,0.4)",lineHeight:1.5,fontFamily:"Georgia,serif"}}>{word?.def}</div>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               {/* Know/Don't know buttons */}
@@ -1050,10 +1065,24 @@ export default function App(){
     const ti=cQ?tl(cQ.type):{i:"✨",l:""};
     const td=tmr<=4,tc=td?"#FF4444":tmr<=8?"#FBBF24":"#D4A630";
     const hpP=(hp/mxHp)*100,vP=curV?(vHp/curV.hp)*100:0;
+    const bossColors={"voldemort":"rgba(120,0,0,0.65)","bellatrix":"rgba(80,0,120,0.55)","snape":"rgba(0,20,80,0.55)","umbridge":"rgba(200,0,100,0.45)","malfoy":"rgba(60,40,0,0.45)"};
+    const bossFlashBg=curV?bossColors[curV.id]||"rgba(80,0,0,0.5)":"rgba(80,0,0,0.5)";
 
     return(<><style>{css}</style>
       {showSp&&<div style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:99,display:"flex",alignItems:"center",justifyContent:"center"}}><div style={{width:100,height:100,borderRadius:"50%",background:`radial-gradient(circle,${spC}88,transparent)`,animation:"sg 0.5s ease-out forwards",boxShadow:`0 0 60px ${spC}`}}/></div>}
       {showPat&&<div style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:50,display:"flex",alignItems:"center",justifyContent:"center"}}><div style={{fontSize:70,animation:"pa 2s ease-out forwards",filter:"brightness(2) drop-shadow(0 0 25px rgba(200,220,255,0.7))",opacity:0}}>{hD?.pat}</div></div>}
+
+      {comboBurst&&<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,pointerEvents:"none",zIndex:97,display:"flex",alignItems:"center",justifyContent:"center"}}>
+        {comboBurst==="sparks"&&<div style={{fontSize:72,animation:"sparks 1s ease-out forwards",filter:"drop-shadow(0 0 20px #FFD700)"}}>✨✨✨</div>}
+        {comboBurst==="lightning"&&<div style={{fontSize:90,animation:"sparks 1.2s ease-out forwards",filter:"drop-shadow(0 0 40px #FFD700) brightness(1.5)"}}>⚡⚡⚡</div>}
+        {comboBurst==="legendary"&&<>
+          <div style={{position:"absolute",top:0,left:0,right:0,bottom:0,background:"radial-gradient(circle,rgba(255,215,0,0.35),transparent 65%)",animation:"lgBurst 2s ease-out forwards"}}/>
+          <div style={{textAlign:"center",position:"relative",animation:"legendTxt 0.5s ease 0.1s both"}}>
+            <div style={{fontSize:90,filter:"drop-shadow(0 0 50px gold) brightness(1.8)"}}>💥</div>
+            <div style={{color:"#FFD700",fontSize:22,fontWeight:900,fontFamily:"'Cinzel',serif",textShadow:"0 0 30px #FFD700,0 0 60px rgba(255,215,0,0.6)",letterSpacing:5,marginTop:8}}>LEGENDARY</div>
+          </div>
+        </>}
+      </div>}
       {ink&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.85)",zIndex:80,pointerEvents:"none",animation:"inkS 2.5s ease-out forwards",display:"flex",alignItems:"center",justifyContent:"center"}}><div style={{fontSize:40}}>🖤</div></div>}
 
       {snitch&&<div style={{position:"fixed",inset:0,zIndex:70}} onClick={e=>e.stopPropagation()}>
@@ -1106,11 +1135,12 @@ export default function App(){
 
       {cd!==null&&cd>0&&<OvLay><div key={cd} style={{color:"#D4A630",fontSize:70,fontWeight:900,animation:"cp 0.8s ease forwards",textShadow:"0 0 35px rgba(212,166,48,0.5)"}}>{cd}</div></OvLay>}
 
-      {showVI&&curV&&<OvLay bg="rgba(0,0,0,0.9)">
-        <div style={{fontSize:56,animation:"va 0.8s ease",marginBottom:4}}>{curV.av}</div>
-        <div style={{color:"#FF4444",fontSize:16,fontWeight:800,animation:"su 0.4s ease 0.3s both"}}>{curV.name}</div>
-        <div style={{color:"rgba(255,255,255,0.3)",fontSize:10,animation:"su 0.4s ease 0.5s both"}}>{curV.nameKo}</div>
-        <div style={{color:"rgba(255,255,255,0.5)",fontSize:12,fontFamily:"'Crimson Text',serif",fontStyle:"italic",marginTop:8,animation:"su 0.4s ease 0.7s both"}}>"{curV.intro}"</div>
+      {showVI&&curV&&<OvLay bg="rgba(0,0,0,0.95)">
+        <div style={{position:"absolute",top:0,left:0,right:0,bottom:0,background:`radial-gradient(ellipse at center,${bossFlashBg},transparent 70%)`,animation:"bossFlash 2.5s ease forwards",pointerEvents:"none"}}/>
+        <div style={{fontSize:90,animation:"va 0.8s ease",marginBottom:10,filter:"drop-shadow(0 0 40px rgba(255,80,0,0.6))",position:"relative"}}>{curV.av}</div>
+        <div style={{color:"#FF4444",fontSize:26,fontWeight:900,animation:"su 0.4s ease 0.3s both",letterSpacing:5,textShadow:"0 0 25px rgba(255,68,68,0.8)",fontFamily:"'Cinzel',serif",position:"relative"}}>{curV.name}</div>
+        <div style={{color:"rgba(255,255,255,0.45)",fontSize:12,animation:"su 0.4s ease 0.5s both",letterSpacing:3,marginTop:4,position:"relative"}}>{curV.nameKo}</div>
+        <div style={{color:"rgba(255,255,255,0.65)",fontSize:14,fontFamily:"'Crimson Text',serif",fontStyle:"italic",marginTop:18,maxWidth:270,textAlign:"center",lineHeight:1.6,animation:"su 0.4s ease 0.7s both",position:"relative"}}>"{curV.intro}"</div>
       </OvLay>}
 
       {showLoc&&<div style={{position:"fixed",top:0,left:0,right:0,zIndex:55,animation:"su 0.3s ease",pointerEvents:"none"}}>
@@ -1128,6 +1158,7 @@ export default function App(){
             </div>
             <div style={{display:"flex",alignItems:"center",gap:4}}>
               {felix&&<span style={{fontSize:8,color:"#FFD700"}}>🍯</span>}
+              {freezeTimer&&<span style={{fontSize:8,color:"#60A5FA"}}>❄️</span>}
               {timeBst>0&&<span style={{fontSize:8,color:"#C084FC"}}>⏳{timeBst}</span>}
               {streak>=3&&<span style={{color:"#FFD700",fontSize:9,fontWeight:700}}>🔥{streak}</span>}
               <span style={{color:"rgba(255,255,255,0.1)",fontSize:7}}>💡{hints}</span>
