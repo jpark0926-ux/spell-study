@@ -1,5 +1,9 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import * as Tone from "tone";
+import { supabase } from './lib/supabase'
+import { saveProgress, loadProgress } from './lib/saveGame'
+import Auth from './components/Auth'
+import Leaderboard from './components/Leaderboard'
 
 const u2W=[
   {en:"dose",ko:"복용량",def:"an amount of medicine to take at a certain time",sent:"The doctor told her to take one _____ of the medicine after each meal."},
@@ -256,7 +260,10 @@ input:focus{outline:none;border-color:#D4A630 !important;box-shadow:0 0 0 3px rg
 `;
 
 export default function App(){
-  const[screen,setScreen]=useState("home");
+  const[user,setUser]=useState(null);
+  const[authReady,setAuthReady]=useState(false);
+  const[showLeaderboard,setShowLeaderboard]=useState(false);
+  const[screen,setScreen]=useState("auth");
   const[house,setHouse]=useState(null);
   const[wand,setWand]=useState(null);
   const[unit,setUnit]=useState(null);
@@ -339,6 +346,40 @@ export default function App(){
   cQRef.current=cQ;
   curVRef.current=curV;
   playRef.current=play;
+
+  // Supabase auth 상태 감지
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null)
+      setAuthReady(true)
+    })
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null)
+    })
+    return () => subscription.unsubscribe()
+  }, [])
+
+  // 진행상황 로드 (유저 변경 시)
+  useEffect(() => {
+    if (!authReady) return
+    const userId = user?.id || 'guest'
+    loadProgress(userId).then((progress) => {
+      if (progress) {
+        setCoins(progress.coins || 0)
+        setBest(progress.bestStreak || 0)
+        setEarnedAch(progress.earnedAch || [])
+        setCards(progress.cards || [])
+        setKilledV(progress.killedV || [])
+      }
+    })
+  }, [user, authReady])
+
+  // auth 완료 후 home 화면으로 자동 전환
+  useEffect(() => {
+    if (authReady && screen === "auth" && user) {
+      setScreen("home")
+    }
+  }, [authReady, user, screen])
 
   useEffect(()=>{
     if(!timedOut) return;
@@ -506,7 +547,21 @@ export default function App(){
       play(hp<=0?"dark":"cup");
       const s={bestStreak:best,fastAnswer:fast,survived1hp:surv1,bossKills:killedV.length,cards:cards.length,snitches:sCatch,noHint:!hintEver};
       const earned=achievements.filter(a=>!earnedAch.includes(a.id)&&a.check(hist,s));
-      setEarnedAch(p=>[...p,...earned.map(a=>a.id)]);
+      const finalEarnedAch=[...earnedAch,...earned.map(a=>a.id)];
+      setEarnedAch(finalEarnedAch);
+
+      // 진행상황 저장
+      const userId = user?.id || 'guest';
+      saveProgress({
+        userId,
+        unit,
+        coins,
+        bestStreak: best,
+        earnedAch: finalEarnedAch,
+        cards,
+        killedV
+      });
+
       if(earned.length>0){
         setShowAch(earned[0]);play("ach");
         setTimeout(()=>{setShowAch(null);setShowCup(true);play("cup");setTimeout(()=>{setShowCup(false);setScreen("results");},3500);},2500);
@@ -545,10 +600,56 @@ export default function App(){
     return{r:"T",t:"Troll",k:"트롤 수준",e:"🧌",c:"#9CA3AF"};
   };
 
+  // AUTH
+  if(screen==="auth") return(<><style>{css}</style>
+    <div style={{minHeight:"100vh",background:BG,fontFamily:"'Cinzel',serif",display:"flex",alignItems:"center",justifyContent:"center",padding:14,position:"relative",overflow:"hidden"}}>
+      <Bg/>
+      <div style={{maxWidth:450,width:"100%",textAlign:"center",position:"relative",zIndex:1}}>
+        <div style={{fontSize:48,marginBottom:2,animation:"fl 3s ease-in-out infinite"}}>🧙‍♂️</div>
+        <h1 style={{color:"#D4A630",fontSize:22,fontWeight:800,letterSpacing:2,animation:"gg 3s infinite",marginBottom:24}}>SPELL & STUDY</h1>
+        <Auth
+          user={user}
+          onGuestMode={() => setScreen("home")}
+        />
+      </div>
+    </div>
+  </>);
+
   // HOME
   if(screen==="home") return(<><style>{css}</style>
     <div style={{minHeight:"100vh",background:BG,fontFamily:"'Cinzel',serif",display:"flex",alignItems:"center",justifyContent:"center",padding:14,position:"relative",overflow:"hidden"}}>
       <Bg/><div style={{maxWidth:400,width:"100%",textAlign:"center",position:"relative",zIndex:1}}>
+        {/* Auth & Leaderboard 상단 바 */}
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16,gap:8}}>
+          <Auth user={user} onGuestMode={() => {}} />
+          <button
+            onClick={() => setShowLeaderboard(true)}
+            style={{
+              padding:"8px 16px",
+              background:"linear-gradient(135deg,rgba(212,166,48,0.1),rgba(138,73,158,0.1))",
+              border:"1px solid rgba(212,166,48,0.3)",
+              borderRadius:"12px",
+              color:"#D4A630",
+              fontSize:"12px",
+              fontWeight:"600",
+              cursor:"pointer",
+              transition:"all 0.2s",
+              display:"flex",
+              alignItems:"center",
+              gap:"6px"
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.background="linear-gradient(135deg,rgba(212,166,48,0.15),rgba(138,73,158,0.15))"
+              e.target.style.borderColor="rgba(212,166,48,0.5)"
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.background="linear-gradient(135deg,rgba(212,166,48,0.1),rgba(138,73,158,0.1))"
+              e.target.style.borderColor="rgba(212,166,48,0.3)"
+            }}
+          >
+            🏆 명예의 전당
+          </button>
+        </div>
         <div style={{fontSize:48,marginBottom:2,animation:"fl 3s ease-in-out infinite"}}>🧙‍♂️</div>
         <h1 style={{color:"#D4A630",fontSize:22,fontWeight:800,letterSpacing:2,animation:"gg 3s infinite"}}>SPELL & STUDY</h1>
         <p style={{color:"rgba(212,166,48,0.3)",fontSize:8,letterSpacing:4,marginBottom:3,fontFamily:"'Crimson Text',serif",fontStyle:"italic"}}>The Magical Vocabulary Academy</p>
@@ -571,6 +672,7 @@ export default function App(){
       </div>
       {sortA&&<OvLay><div style={{fontSize:60,animation:"sh 1.8s ease-in-out",marginBottom:8}}>🎩</div>
         <div style={{color:"#D4A630",fontSize:18,fontWeight:700,animation:"su 0.5s ease 0.8s both"}}>{houses.find(h=>h.id===house)?.name}!</div></OvLay>}
+      {showLeaderboard&&<Leaderboard onClose={() => setShowLeaderboard(false)} />}
     </div></>);
 
   // WAND
