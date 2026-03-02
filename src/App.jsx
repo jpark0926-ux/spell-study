@@ -73,6 +73,56 @@ const u4W=[
   {en:"veil",ko:"베일",def:"a thin covering for the head and face",sent:"The bride wore a _____."},
 ];
 
+// ── 교과서 단어 ──
+const tbChapters=[
+  {n:5,t:"Nature & Farming",i:"🌾",words:[
+    {en:"abundant",ko:"풍부한",def:"existing or available in large quantities",sent:"Fruit is _____ in summer."},
+    {en:"consistent",ko:"일관된",def:"always behaving or happening in a similar way",sent:"Her results are _____ every time."},
+    {en:"maple",ko:"단풍나무",def:"a tree with five-pointed leaves",sent:"The _____ tree turns red in autumn."},
+    {en:"pest",ko:"해충",def:"an animal or insect that damages plants",sent:"Farmers must protect crops from _____."},
+    {en:"plow",ko:"쟁기질하다",def:"to cut up and turn soil",sent:"Farmers _____ the field before planting seeds."},
+    {en:"shovel",ko:"삽",def:"a tool with a broad scoop and long handle",sent:"He used a _____ to dig the hole."},
+    {en:"sprinkler",ko:"스프링클러",def:"a device used to spray water",sent:"The _____ keeps the lawn green."},
+    {en:"sustainable",ko:"지속 가능한",def:"able to continue over a period of time",sent:"We need _____ energy sources."},
+    {en:"vegetation",ko:"초목",def:"plants, trees, grasses",sent:"Dense _____ covered the hillside."},
+    {en:"vital",ko:"필수적인",def:"essential or necessary",sent:"Water is _____ for all living things."},
+    {en:"bud",ko:"꽃봉오리",def:"a small part of a plant that develops into a flower",sent:"The rose _____ will bloom tomorrow."},
+    {en:"estate",ko:"사유지",def:"an area of land owned by a person",sent:"The _____ had a large orchard."},
+    {en:"pesticide",ko:"살충제",def:"a chemical put on a plant to kill pests",sent:"Farmers spray _____ on their crops."},
+    {en:"plain",ko:"단순한",def:"simple and with nothing added",sent:"She prefers _____ food over spicy food."},
+    {en:"rake",ko:"갈퀴",def:"a garden tool with a long handle and teeth",sent:"He used a _____ to gather the leaves."},
+    {en:"rotate",ko:"회전하다",def:"to spin or turn in a circular motion",sent:"The Earth _____s around the sun."},
+    {en:"stack",ko:"쌓다",def:"to pile up",sent:"He _____ed the boxes neatly in the corner."},
+    {en:"upgrade",ko:"개선하다",def:"to improve the quality or usefulness",sent:"They decided to _____ the old equipment."},
+    {en:"utilize",ko:"활용하다",def:"to use something",sent:"We should _____ every available resource."},
+    {en:"warehouse",ko:"창고",def:"a large building where goods are stored",sent:"The goods were stored in a _____."},
+  ]},
+  {n:10,t:"Society & Values",i:"⚖️",words:[
+    {en:"admission",ko:"입장 허가",def:"the right or permission to enter a place",sent:"Free _____ is available for children under five."},
+    {en:"ambition",ko:"야망",def:"a goal; a strong desire for success",sent:"Her _____ is to become a doctor."},
+    {en:"bias",ko:"편견",def:"a tendency to prefer one thing over another",sent:"The judge must not show any _____."},
+    {en:"censor",ko:"검열하다",def:"to remove offensive content from books or movies",sent:"The government tried to _____ the film."},
+    {en:"contradict",ko:"반박하다",def:"to say the opposite of what someone else said",sent:"Don\'t _____ yourself in your essay."},
+    {en:"division",ko:"분리",def:"the act of separating one unit into parts",sent:"The _____ of the class into groups was fair."},
+    {en:"fundamental",ko:"근본적인",def:"forming the most important part",sent:"Freedom of speech is a _____ right."},
+    {en:"hatred",ko:"증오",def:"a very strong feeling of dislike",sent:"War often spreads _____ between nations."},
+    {en:"mankind",ko:"인류",def:"all human beings",sent:"Science has benefited _____ greatly."},
+    {en:"mercy",ko:"자비",def:"kind or compassionate treatment",sent:"The king showed _____ to the prisoner."},
+  ]},
+  {n:11,t:"Religion & Spirit",i:"⛪",words:[
+    {en:"Catholic",ko:"가톨릭의",def:"of the Roman Catholic branch of Christianity",sent:"The _____ church is very old."},
+    {en:"chapel",ko:"예배당",def:"a small church",sent:"They got married in a small _____."},
+    {en:"dim",ko:"어두운",def:"not bright or clear",sent:"The room was _____ and hard to see in."},
+    {en:"impulsively",ko:"충동적으로",def:"suddenly; without careful thought",sent:"She _____ bought the expensive shoes."},
+    {en:"ministry",ko:"성직",def:"the profession of a religious minister",sent:"He dedicated his life to the _____."},
+    {en:"monastery",ko:"수도원",def:"a place where monks live and work",sent:"The ancient _____ sits on top of the mountain."},
+    {en:"nun",ko:"수녀",def:"a member of a women\'s religious community",sent:"The _____ helped the poor in her community."},
+    {en:"pope",ko:"교황",def:"the head of the Roman Catholic Church",sent:"The _____ greeted thousands of pilgrims."},
+    {en:"privilege",ko:"특권",def:"a right or advantage",sent:"Education is a _____ not everyone has."},
+    {en:"tremendous",ko:"엄청난",def:"very large or great",sent:"The concert was a _____ success."},
+  ]},
+];
+
 const houses=[
   {id:"gryffindor",name:"Gryffindor",nameKo:"그리핀도르",color:"#AE0001",c2:"#D4A630",bg:"linear-gradient(135deg,#740001,#AE0001)",emoji:"🦁",trait:"용기",pat:"🦌"},
   {id:"slytherin",name:"Slytherin",nameKo:"슬리데린",color:"#1A472A",c2:"#AAAAAA",bg:"linear-gradient(135deg,#0D2818,#1A472A)",emoji:"🐍",trait:"야망",pat:"🐉"},
@@ -267,6 +317,7 @@ export default function App(){
   const[house,setHouse]=useState(null);
   const[wand,setWand]=useState(null);
   const[unit,setUnit]=useState(null);
+  const[tbMode,setTbMode]=useState(false);
   const[questions,setQuestions]=useState([]);
   const[qi,setQi]=useState(0);
   const[coins,setCoins]=useState(0);
@@ -483,7 +534,9 @@ export default function App(){
 
   const startGame=u=>{
     if(snRef.current)clearInterval(snRef.current);if(tRef.current)clearInterval(tRef.current);
-    setUnit(u);setQuestions(genQs(u===2?u2W:u===3?u3W:u4W));
+    setUnit(u);
+    const tbCh=tbChapters.find(c=>c.n===u);
+    setQuestions(genQs(tbCh?tbCh.words:u===2?u2W:u===3?u3W:u4W));
     setQi(0);setCoins(0);setHp(10);setStreak(0);setBest(0);setTmr(20);setAns(false);
     setHist([]);setHints(3);setRevL([]);setHUsed(false);setKilledV([]);
     setCurV(null);setVHp(0);setVDead(false);setAMsg(null);setCurA(null);
@@ -713,12 +766,22 @@ export default function App(){
         <div style={{display:"flex",justifyContent:"center",gap:3,marginBottom:14}}>
           {villains.map((v,i)=><div key={i} style={{fontSize:16,opacity:0.45}}>{v.av}</div>)}
         </div>
-        {[{n:2,t:"Healing & Society",i:"🧪"},{n:3,t:"Body & Potions",i:"⚗️"},{n:4,t:"Art & Culture",i:"🎨"}].map(u=>
+        <div style={{display:"flex",gap:6,marginBottom:12,background:"rgba(255,255,255,0.03)",borderRadius:20,padding:4}}>
+          {[{k:false,l:"🧙 호그와트"},{k:true,l:"📚 교과서"}].map(t=><button key={String(t.k)} onClick={()=>setTbMode(t.k)} style={{flex:1,padding:"7px",borderRadius:16,border:"none",background:tbMode===t.k?"linear-gradient(135deg,#D4A630,#B8860B)":"transparent",color:tbMode===t.k?"#1a1033":"rgba(212,166,48,0.6)",fontSize:12,fontWeight:700,cursor:"pointer",transition:"all 0.2s"}}>{t.l}</button>)}
+        </div>
+        {!tbMode?[{n:2,t:"Healing & Society",i:"🧪"},{n:3,t:"Body & Potions",i:"⚗️"},{n:4,t:"Art & Culture",i:"🎨"}].map(u=>
           <div key={u.n} onClick={()=>startGame(u.n)} style={{background:"rgba(255,255,255,0.03)",border:"1px solid rgba(212,166,48,0.1)",borderRadius:14,padding:"18px",marginBottom:8,cursor:"pointer",transition:"all 0.3s",display:"flex",alignItems:"center",gap:10}}
             onMouseEnter={e=>{e.currentTarget.style.borderColor="#D4A630";}} onMouseLeave={e=>{e.currentTarget.style.borderColor="rgba(212,166,48,0.1)";}}>
             <div style={{fontSize:26,width:42,height:42,background:"rgba(212,166,48,0.05)",borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center"}}>{u.i}</div>
             <div style={{textAlign:"left"}}><div style={{color:"#D4A630",fontSize:13,fontWeight:700}}>Unit {u.n}: {u.t}</div>
             <div style={{color:"rgba(255,255,255,0.2)",fontSize:8}}>25 rounds · 5 bosses</div></div>
+          </div>)
+        :tbChapters.map(c=>
+          <div key={c.n} onClick={()=>startGame(c.n)} style={{background:"rgba(255,255,255,0.03)",border:"1px solid rgba(66,153,225,0.2)",borderRadius:14,padding:"18px",marginBottom:8,cursor:"pointer",transition:"all 0.3s",display:"flex",alignItems:"center",gap:10}}
+            onMouseEnter={e=>{e.currentTarget.style.borderColor="#63B3ED";}} onMouseLeave={e=>{e.currentTarget.style.borderColor="rgba(66,153,225,0.2)";}}>
+            <div style={{fontSize:26,width:42,height:42,background:"rgba(66,153,225,0.08)",borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center"}}>{c.i}</div>
+            <div style={{textAlign:"left"}}><div style={{color:"#63B3ED",fontSize:13,fontWeight:700}}>Chapter {c.n}: {c.t}</div>
+            <div style={{color:"rgba(255,255,255,0.2)",fontSize:8}}>{c.words.length} words</div></div>
           </div>)}
       </div>
     </div></>);
